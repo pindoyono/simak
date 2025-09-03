@@ -6,13 +6,22 @@ use App\Models\AssessmentCategory;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
-class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidation, WithChunkReading, SkipsEmptyRows
+class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnError, SkipsOnFailure, WithChunkReading, WithBatchInserts
 {
-    private $importedCount = 0;
-    private $skippedCount = 0;
+    use Importable, SkipsErrors, SkipsFailures;
+
+    protected $importedCount = 0;
+    protected $skippedCount = 0;
 
     /**
      * @param array $row
@@ -74,7 +83,23 @@ class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidatio
         ];
     }
 
-    public function customValidationMessages()
+    public function chunkSize(): int
+    {
+        return 100;
+    }
+
+    /**
+     * @return int
+     */
+    public function batchSize(): int
+    {
+        return 100;
+    }
+
+    /**
+     * Get custom validation messages
+     */
+    public function customValidationMessages(): array
     {
         return [
             'komponen.required' => 'Komponen harus diisi',
@@ -85,16 +110,17 @@ class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidatio
         ];
     }
 
-    public function chunkSize(): int
-    {
-        return 100;
-    }
-
+    /**
+     * Get the count of imported rows
+     */
     public function getImportedCount(): int
     {
         return $this->importedCount;
     }
 
+    /**
+     * Get the count of skipped rows
+     */
     public function getSkippedCount(): int
     {
         return $this->skippedCount;

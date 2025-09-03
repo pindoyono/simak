@@ -4,14 +4,14 @@
 
 File template Excel untuk import data Assessment Category memiliki kolom-kolom berikut:
 
-| Kolom | Keterangan | Wajib | Contoh |
-|-------|------------|-------|---------|
-| **Komponen** | Nama komponen asesmen | Ya | Aspek Kepemimpinan |
-| **Nama Kategori** | Nama kategori dalam komponen | Ya | Visi dan Misi Sekolah |
-| **Deskripsi** | Deskripsi detail kategori | Tidak | Penilaian terhadap visi dan misi sekolah yang jelas dan terukur |
-| **Bobot Penilaian (%)** | Bobot dalam persen (0.01-100) | Ya | 15.00 |
-| **Urutan** | Urutan tampil kategori | Tidak | 1 |
-| **Status** | Status aktif kategori | Tidak | Aktif |
+| Kolom | Keterangan | Wajib | Nilai yang Valid | Contoh |
+|-------|------------|-------|------------------|---------|
+| **Komponen** | Komponen asesmen (ENUM) | Ya | SISWA, GURU, KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN, MANAGEMENT KEPALA SEKOLAH | SISWA |
+| **Nama Kategori** | Nama kategori dalam komponen | Ya | - | Standar Isi dan Kurikulum |
+| **Deskripsi** | Deskripsi detail kategori | Tidak | - | Penilaian terhadap standar isi dan kurikulum sekolah |
+| **Bobot Penilaian (%)** | Bobot dalam persen (0.01-100) | Ya | 0.01 - 100.00 | 15.00 |
+| **Urutan** | Urutan tampil kategori | Tidak | >= 1 | 1 |
+| **Status** | Status aktif kategori | Tidak | Aktif/Active/1/Ya/Yes/True | Aktif |
 
 ## Cara Penggunaan
 
@@ -22,7 +22,11 @@ File template Excel untuk import data Assessment Category memiliki kolom-kolom b
 
 ## Aturan Validasi
 
-- **Komponen**: Maksimal 255 karakter
+- **Komponen**: Wajib, harus salah satu dari nilai ENUM yang valid:
+  - `SISWA`
+  - `GURU` 
+  - `KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN`
+  - `MANAGEMENT KEPALA SEKOLAH`
 - **Nama Kategori**: Maksimal 255 karakter, tidak boleh duplikat dalam komponen yang sama
 - **Bobot Penilaian**: Harus berupa angka antara 0.01 sampai 100
 - **Urutan**: Harus berupa angka positif (minimal 1)

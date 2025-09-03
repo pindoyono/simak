@@ -187,59 +187,81 @@ class AssessmentCategoryResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->action(function (array $data) {
+                        // Get the uploaded file path
+                        $uploadedFile = $data['file'];
+                        $fullPath = storage_path('app/private/' . $uploadedFile);
+                        
+                        // Verify file exists
+                        if (!file_exists($fullPath)) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Import gagal')
+                                ->body('File tidak dapat diakses: ' . $fullPath)
+                                ->send();
+                            return;
+                        }
+
                         try {
-                            // Get the uploaded file path - file sudah disimpan di storage/app/private/imports/
-                            $filePath = storage_path('app/private/' . $data['file']);
-                            
-                            // Check if file exists
-                            if (!file_exists($filePath)) {
-                                throw new \Exception('File tidak ditemukan. Silakan upload ulang.');
-                            }
-                            
                             $import = new AssessmentCategoryImport();
-                            Excel::import($import, $filePath);
+                            Excel::import($import, $fullPath);
 
-                            $imported = $import->getImportedCount();
-                            $skipped = $import->getSkippedCount();
+                            $errors = $import->failures();
+                            $errorCount = $errors->count();
 
-                            // Clean up uploaded file
-                            if (file_exists($filePath)) {
-                                unlink($filePath);
-                            }
+                            if ($errorCount > 0) {
+                                $errorMessages = $errors->map(function ($failure) {
+                                    return "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+                                })->take(5)->implode('\n'); // Show max 5 errors
 
-                            if ($imported > 0) {
+                                $moreErrors = $errorCount > 5 ? "\n... dan " . ($errorCount - 5) . " error lainnya" : "";
+                                $importedCount = $import->getImportedCount();
+                                $skippedCount = $import->getSkippedCount();
+
+                                $summary = "Berhasil: {$importedCount} data";
+                                if ($skippedCount > 0) {
+                                    $summary .= " | Dilewati: {$skippedCount} baris kosong";
+                                }
+                                $summary .= " | Error: {$errorCount} baris";
+
                                 Notification::make()
-                                    ->title('Import Berhasil!')
-                                    ->body("Berhasil mengimport {$imported} kategori asesmen. {$skipped} baris dilewati.")
-                                    ->success()
+                                    ->warning()
+                                    ->title('Import selesai dengan peringatan')
+                                    ->body($summary . "\n\nError details:\n" . $errorMessages . $moreErrors)
                                     ->send();
                             } else {
-                                Notification::make()
-                                    ->title('Import Selesai')
-                                    ->body("Tidak ada data yang diimport. {$skipped} baris dilewati karena duplikat atau tidak valid.")
-                                    ->warning()
-                                    ->send();
+                                $importedCount = $import->getImportedCount();
+                                $skippedCount = $import->getSkippedCount();
+
+                                if ($importedCount > 0) {
+                                    $summary = "Berhasil mengimport {$importedCount} kategori asesmen";
+                                    if ($skippedCount > 0) {
+                                        $summary .= " | Dilewati: {$skippedCount} baris kosong";
+                                    }
+
+                                    Notification::make()
+                                        ->success()
+                                        ->title('Import berhasil!')
+                                        ->body($summary)
+                                        ->send();
+                                } else {
+                                    Notification::make()
+                                        ->warning()
+                                        ->title('Tidak ada data yang diimport')
+                                        ->body("Semua baris dilewati ({$skippedCount} baris kosong)")
+                                        ->send();
+                                }
                             }
 
-                        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-                            $failures = $e->failures();
-                            $errorMessages = [];
-                            
-                            foreach ($failures as $failure) {
-                                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+                            // Clean up the uploaded file
+                            if (file_exists($fullPath)) {
+                                unlink($fullPath);
                             }
-                            
-                            Notification::make()
-                                ->title('Validasi Gagal!')
-                                ->body('Error: ' . implode('; ', array_slice($errorMessages, 0, 3)))
-                                ->danger()
-                                ->send();
-                                
+
                         } catch (\Exception $e) {
                             Notification::make()
-                                ->title('Import Gagal!')
-                                ->body('Error: ' . $e->getMessage())
                                 ->danger()
+                                ->title('Import gagal')
+                                ->body('Error: ' . $e->getMessage())
                                 ->send();
                         }
                     }),

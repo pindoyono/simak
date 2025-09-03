@@ -18,30 +18,38 @@ class AssessmentCategoryTemplateExport implements FromCollection, WithHeadings, 
 {
     public function collection()
     {
-        // Return example data for template
+        // Return example data for template dengan komponen ENUM yang valid
         return collect([
             [
-                'Aspek Kepemimpinan',
-                'Visi dan Misi Sekolah',
-                'Penilaian terhadap visi dan misi sekolah yang jelas dan terukur',
+                'SISWA',
+                'Standar Isi dan Kurikulum',
+                'Penilaian terhadap standar isi dan kurikulum sekolah yang sesuai dengan standar nasional',
                 15.00,
                 1,
                 'Aktif'
             ],
             [
-                'Aspek Kepemimpinan',
-                'Perencanaan Strategis',
-                'Kemampuan kepala sekolah dalam membuat perencanaan strategis jangka pendek dan panjang',
-                10.00,
+                'GURU',
+                'Kompetensi Pedagogik',
+                'Penilaian terhadap kemampuan guru dalam mengelola pembelajaran dan memahami peserta didik',
+                20.00,
                 2,
                 'Aktif'
             ],
             [
-                'Aspek Pembelajaran',
-                'Kurikulum dan Program',
-                'Kelengkapan dan implementasi kurikulum sesuai standar nasional',
-                20.00,
+                'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN',
+                'Perencanaan Pembelajaran',
+                'Penilaian terhadap kemampuan guru dalam merencanakan dan melaksanakan pembelajaran',
+                25.00,
                 3,
+                'Aktif'
+            ],
+            [
+                'MANAGEMENT KEPALA SEKOLAH',
+                'Kepemimpinan Sekolah',
+                'Penilaian terhadap kemampuan kepala sekolah dalam memimpin dan mengelola sekolah',
+                20.00,
+                4,
                 'Aktif'
             ]
         ]);
