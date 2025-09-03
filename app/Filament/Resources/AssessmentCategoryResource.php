@@ -5,13 +5,17 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AssessmentCategoryResource\Pages;
 use App\Filament\Resources\AssessmentCategoryResource\RelationManagers;
 use App\Models\AssessmentCategory;
+use App\Exports\AssessmentCategoryTemplateExport;
+use App\Imports\AssessmentCategoryImport;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AssessmentCategoryResource extends Resource
 {
@@ -25,22 +29,56 @@ class AssessmentCategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('komponen')
-                    ->required(),
-                Forms\Components\TextInput::make('nama_kategori')
-                    ->required(),
-                Forms\Components\Textarea::make('deskripsi')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('bobot_penilaian')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('urutan')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\Toggle::make('is_active')
-                    ->required(),
+                Forms\Components\Section::make('Informasi Kategori Asesmen')
+                    ->description('Masukkan detail kategori asesmen')
+                    ->schema([
+                        Forms\Components\TextInput::make('komponen')
+                            ->label('Komponen')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Contoh: Aspek Kepemimpinan'),
+                        
+                        Forms\Components\TextInput::make('nama_kategori')
+                            ->label('Nama Kategori')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Contoh: Visi dan Misi Sekolah'),
+                        
+                        Forms\Components\Textarea::make('deskripsi')
+                            ->label('Deskripsi')
+                            ->rows(3)
+                            ->placeholder('Deskripsi detail tentang kategori asesmen ini')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Pengaturan Penilaian')
+                    ->description('Atur bobot dan urutan kategori')
+                    ->schema([
+                        Forms\Components\TextInput::make('bobot_penilaian')
+                            ->label('Bobot Penilaian (%)')
+                            ->required()
+                            ->numeric()
+                            ->min(0.01)
+                            ->max(100)
+                            ->step(0.01)
+                            ->suffix('%')
+                            ->placeholder('0.00'),
+                        
+                        Forms\Components\TextInput::make('urutan')
+                            ->label('Urutan')
+                            ->required()
+                            ->numeric()
+                            ->min(1)
+                            ->default(1)
+                            ->placeholder('1'),
+                        
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Status Aktif')
+                            ->default(true)
+                            ->helperText('Aktifkan kategori ini untuk digunakan dalam asesmen'),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -49,37 +87,146 @@ class AssessmentCategoryResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('komponen')
-                    ->searchable(),
+                    ->label('Komponen')
+                    ->searchable()
+                    ->sortable()
+                    ->badge(),
+                
                 Tables\Columns\TextColumn::make('nama_kategori')
-                    ->searchable(),
+                    ->label('Nama Kategori')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap(),
+                
+                Tables\Columns\TextColumn::make('deskripsi')
+                    ->label('Deskripsi')
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    })
+                    ->toggleable(),
+                
                 Tables\Columns\TextColumn::make('bobot_penilaian')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('Bobot (%)')
+                    ->numeric(decimalPlaces: 2)
+                    ->suffix('%')
+                    ->sortable()
+                    ->alignCenter(),
+                
                 Tables\Columns\TextColumn::make('urutan')
+                    ->label('Urutan')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->alignCenter(),
+                
                 Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
+                    ->label('Status')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->alignCenter(),
+                
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Dibuat')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Diperbarui')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('komponen')
+                    ->label('Komponen')
+                    ->options(function () {
+                        return AssessmentCategory::distinct()->pluck('komponen', 'komponen')->toArray();
+                    }),
+                
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Status')
+                    ->boolean()
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Tidak Aktif')
+                    ->native(false),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('downloadTemplate')
+                    ->label('Download Template')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        $fileName = 'template-kategori-asesmen-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+                        
+                        return Excel::download(new AssessmentCategoryTemplateExport, $fileName);
+                    }),
+                
+                Tables\Actions\Action::make('importExcel')
+                    ->label('Import Excel')
+                    ->icon('heroicon-o-document-arrow-up')
+                    ->color('primary')
+                    ->form([
+                        Forms\Components\FileUpload::make('file')
+                            ->label('File Excel')
+                            ->required()
+                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
+                            ->maxSize(5120) // 5MB
+                            ->helperText('Format yang didukung: .xlsx, .xls (Maksimal 5MB)')
+                            ->uploadingMessage('Mengupload file...')
+                            ->columnSpanFull(),
+                    ])
+                    ->action(function (array $data) {
+                        try {
+                            $import = new AssessmentCategoryImport();
+                            Excel::import($import, $data['file']);
+                            
+                            $imported = $import->getImportedCount();
+                            $skipped = $import->getSkippedCount();
+                            $errors = $import->getErrors();
+                            
+                            if ($imported > 0) {
+                                Notification::make()
+                                    ->title('Import Berhasil!')
+                                    ->body("Berhasil mengimport {$imported} kategori asesmen. {$skipped} baris dilewati.")
+                                    ->success()
+                                    ->send();
+                            }
+                            
+                            if (!empty($errors)) {
+                                Notification::make()
+                                    ->title('Ada Error Saat Import')
+                                    ->body('Beberapa data tidak dapat diimport: ' . implode('; ', array_slice($errors, 0, 3)))
+                                    ->warning()
+                                    ->send();
+                            }
+                            
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Import Gagal!')
+                                ->body('Error: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('urutan', 'asc');
     }
 
     public static function getRelations(): array
