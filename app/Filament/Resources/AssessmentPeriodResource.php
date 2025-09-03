@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\AssessmentCategoryResource\Pages;
-use App\Filament\Resources\AssessmentCategoryResource\RelationManagers;
-use App\Models\AssessmentCategory;
+use App\Filament\Resources\AssessmentPeriodResource\Pages;
+use App\Filament\Resources\AssessmentPeriodResource\RelationManagers;
+use App\Models\AssessmentPeriod;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,33 +13,31 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class AssessmentCategoryResource extends Resource
+class AssessmentPeriodResource extends Resource
 {
-    protected static ?string $model = AssessmentCategory::class;
-    protected static ?string $navigationIcon = 'heroicon-o-folder';
-    protected static ?string $navigationLabel = 'Assessment Categories';
+    protected static ?string $model = AssessmentPeriod::class;
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static ?string $navigationLabel = 'Assessment Periods';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('komponen')
+                Forms\Components\TextInput::make('name')
                     ->required(),
-                Forms\Components\TextInput::make('nama_kategori')
+                Forms\Components\TextInput::make('academic_year')
                     ->required(),
-                Forms\Components\Textarea::make('deskripsi')
+                Forms\Components\TextInput::make('semester')
+                    ->required(),
+                Forms\Components\DatePicker::make('start_date')
+                    ->required(),
+                Forms\Components\DatePicker::make('end_date')
+                    ->required(),
+                Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('bobot_penilaian')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('urutan')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\Toggle::make('is_active')
+                Forms\Components\TextInput::make('status')
                     ->required(),
             ]);
     }
@@ -48,18 +46,18 @@ class AssessmentCategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('komponen')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('nama_kategori')
+                Tables\Columns\TextColumn::make('academic_year')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('bobot_penilaian')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('semester')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('start_date')
+                    ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('urutan')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('end_date')
+                    ->date()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -68,6 +66,8 @@ class AssessmentCategoryResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('status')
+                    ->searchable(),
             ])
             ->filters([
                 //
@@ -92,9 +92,9 @@ class AssessmentCategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAssessmentCategories::route('/'),
-            'create' => Pages\CreateAssessmentCategory::route('/create'),
-            'edit' => Pages\EditAssessmentCategory::route('/{record}/edit'),
+            'index' => Pages\ListAssessmentPeriods::route('/'),
+            'create' => Pages\CreateAssessmentPeriod::route('/create'),
+            'edit' => Pages\EditAssessmentPeriod::route('/{record}/edit'),
         ];
     }
 }

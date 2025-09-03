@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssessmentIndicator extends Model
 {
@@ -25,8 +26,20 @@ class AssessmentIndicator extends Model
         'bobot_indikator' => 'decimal:2',
     ];
 
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(AssessmentCategory::class, 'assessment_category_id');
+    }
+
+    // Accessor for name to use nama_indikator
+    public function getNameAttribute(): string
+    {
+        return $this->nama_indikator;
+    }
+
+    // Accessor for description to use deskripsi
+    public function getDescriptionAttribute(): string
+    {
+        return $this->deskripsi ?? '';
     }
 }

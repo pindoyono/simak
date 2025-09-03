@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AssessmentCategorySeeder::class,
+            AssessmentPeriodSeeder::class,
             SchoolSeeder::class,
         ]);
 

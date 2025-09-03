@@ -27,4 +27,14 @@ class School extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function assessments()
+    {
+        return $this->hasMany(SchoolAssessment::class);
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->nama_sekolah . ' (' . $this->npsn . ')';
+    }
 }

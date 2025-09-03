@@ -16,8 +16,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class AssessmentIndicatorResource extends Resource
 {
     protected static ?string $model = AssessmentIndicator::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-list-bullet';
+    protected static ?string $navigationLabel = 'Assessment Indicators';
+    protected static ?string $navigationGroup = 'Master Data';
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
