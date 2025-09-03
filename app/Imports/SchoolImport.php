@@ -29,19 +29,21 @@ class SchoolImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnEr
      */
     public function model(array $row)
     {
-        // Skip empty rows - check if all required fields are empty/null
-        if (empty(trim($row['nama_sekolah'] ?? '')) ||
-            empty(trim($row['npsn'] ?? '')) ||
-            empty(trim($row['alamat'] ?? ''))) {
-            $this->skippedCount++;
-            return null;
+        // Validasi data lebih efisien dengan early return
+        $requiredFields = ['nama_sekolah', 'npsn', 'alamat'];
+        
+        foreach ($requiredFields as $field) {
+            if (empty(trim($row[$field] ?? ''))) {
+                $this->skippedCount++;
+                return null;
+            }
         }
 
         $this->importedCount++;
 
         return new School([
             'nama_sekolah' => trim($row['nama_sekolah']),
-            'npsn' => (string) trim($row['npsn']), // Convert to string and trim
+            'npsn' => trim($row['npsn']),
             'alamat' => trim($row['alamat']),
             'kecamatan' => trim($row['kecamatan'] ?? ''),
             'kabupaten_kota' => trim($row['kabupaten_kota'] ?? ''),
