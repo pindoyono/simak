@@ -110,12 +110,7 @@ class AssessmentWizard extends Page implements HasForms
                     ->schema([
                         Forms\Components\Radio::make("scores.{$indicator->id}.score")
                             ->label('Score')
-                            ->options([
-                                1 => 'Kurang',
-                                2 => 'Cukup Baik',
-                                3 => 'Baik',
-                                4 => 'Sangat Baik',
-                            ])
+                            ->options($this->getScoreOptions($indicator))
                             ->inline()
                             ->required(),
 
@@ -280,7 +275,7 @@ class AssessmentWizard extends Page implements HasForms
                     [
                         'status' => 'submitted',
                         'total_score' => $this->calculateTotalScore($allData),
-                        'grade' => $this->calculateFinalGrade($allData),
+                        'grade' => $this->calculateGradeForDatabase($allData),
                         'submitted_at' => now(),
                         'catatan' => $allData['notes'] ?? null,
                         'tanggal_asesmen' => now()->toDateString(),
@@ -383,27 +378,6 @@ class AssessmentWizard extends Page implements HasForms
         return $school ? $school->nama_sekolah : 'School not found';
     }
 
-    protected function calculateTotalScore(array $data = null): float
-    {
-        $scores = $data['scores'] ?? $this->data['scores'] ?? [];
-
-        if (empty($scores)) {
-            return 0;
-        }
-
-        $total = 0;
-        $count = 0;
-
-        foreach ($scores as $scoreData) {
-            if (isset($scoreData['score']) && is_numeric($scoreData['score'])) {
-                $total += (float) $scoreData['score'];
-                $count++;
-            }
-        }
-
-        return $count > 0 ? round($total / $count, 2) : 0;
-    }
-
     protected function calculateFinalGrade(array $data = null): string
     {
         $score = $this->calculateTotalScore($data);
@@ -413,6 +387,18 @@ class AssessmentWizard extends Page implements HasForms
             $score >= 2.5 => 'B (Baik)',
             $score >= 1.5 => 'C (Cukup Baik)',
             default => 'D (Kurang)',
+        };
+    }
+
+    protected function calculateGradeForDatabase(array $data = null): string
+    {
+        $score = $this->calculateTotalScore($data);
+
+        return match (true) {
+            $score >= 3.5 => 'A',
+            $score >= 2.5 => 'B',
+            $score >= 1.5 => 'C',
+            default => 'D',
         };
     }
 
@@ -429,5 +415,105 @@ class AssessmentWizard extends Page implements HasForms
     public function getCurrentStepLabel(): string
     {
         return $this->getSteps()[$this->currentStep] ?? 'Unknown Step';
+    }
+
+    /**
+     * Get score options for an indicator based on database configuration
+     */
+    protected function getScoreOptions(AssessmentIndicator $indicator): array
+    {
+        $maxScore = $indicator->skor_maksimal ?? 4;
+        $criteria = $indicator->kriteria_penilaian;
+
+        // If criteria_penilaian is defined and has specific format, parse it
+        if ($criteria && $this->isStructuredCriteria($criteria)) {
+            return $this->parseStructuredCriteria($criteria);
+        }
+
+        // Default fallback based on skor_maksimal
+        return $this->generateDefaultOptions($maxScore);
+    }
+
+    /**
+     * Check if criteria follows structured format like "1=Label, 2=Label"
+     */
+    protected function isStructuredCriteria(string $criteria): bool
+    {
+        return preg_match('/\d+\s*=\s*[^,]+/', $criteria);
+    }
+
+    /**
+     * Parse structured criteria like "Skala 1-4: 1=Sangat Kurang, 2=Kurang, 3=Baik, 4=Sangat Baik"
+     */
+    protected function parseStructuredCriteria(string $criteria): array
+    {
+        $options = [];
+        
+        // Extract key=value pairs using regex
+        preg_match_all('/(\d+)\s*=\s*([^,]+)/', $criteria, $matches, PREG_SET_ORDER);
+        
+        foreach ($matches as $match) {
+            $score = (int) $match[1];
+            $label = trim($match[2]);
+            $options[$score] = $label;
+        }
+        
+        // Sort by score value
+        ksort($options);
+        
+        return $options;
+    }
+
+    /**
+     * Generate default options based on maximum score
+     */
+    protected function generateDefaultOptions(int $maxScore): array
+    {
+        $defaultLabels = [
+            1 => 'Sangat Kurang',
+            2 => 'Kurang', 
+            3 => 'Cukup',
+            4 => 'Baik',
+            5 => 'Sangat Baik'
+        ];
+
+        $options = [];
+        for ($i = 1; $i <= $maxScore; $i++) {
+            $options[$i] = $defaultLabels[$i] ?? "Level {$i}";
+        }
+
+        return $options;
+    }
+
+    /**
+     * Calculate total score with flexible scoring system
+     */
+    protected function calculateTotalScore(array $data = null): float
+    {
+        $scores = $data['scores'] ?? $this->data['scores'] ?? [];
+
+        if (empty($scores)) {
+            return 0;
+        }
+
+        $weightedTotal = 0;
+        $totalWeight = 0;
+
+        foreach ($scores as $indicatorId => $scoreData) {
+            if (isset($scoreData['score']) && is_numeric($scoreData['score'])) {
+                $indicator = AssessmentIndicator::find($indicatorId);
+                $score = (float) $scoreData['score'];
+                $weight = $indicator->bobot_indikator ?? 1;
+                $maxScore = $indicator->skor_maksimal ?? 4;
+                
+                // Normalize score to 0-1 scale, then multiply by weight
+                $normalizedScore = $score / $maxScore;
+                $weightedTotal += $normalizedScore * $weight;
+                $totalWeight += $weight;
+            }
+        }
+
+        // Return weighted average on 4-point scale
+        return $totalWeight > 0 ? round(($weightedTotal / $totalWeight) * 4, 2) : 0;
     }
 }

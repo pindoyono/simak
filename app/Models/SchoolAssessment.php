@@ -92,4 +92,16 @@ class SchoolAssessment extends Model
             default => 'Unknown',
         };
     }
+
+    public function getGradeWithDescriptionAttribute(): string
+    {
+        return match($this->grade) {
+            'A' => 'A (Sangat Baik)',
+            'B' => 'B (Baik)',
+            'C' => 'C (Cukup Baik)',
+            'D' => 'D (Kurang)',
+            'F' => 'F (Gagal)',
+            default => $this->grade ?? 'N/A',
+        };
+    }
 }
