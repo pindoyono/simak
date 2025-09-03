@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AssessmentIndicatorResource\Pages;
 use App\Filament\Resources\AssessmentIndicatorResource\RelationManagers;
 use App\Models\AssessmentIndicator;
+use App\Models\AssessmentCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -25,28 +26,47 @@ class AssessmentIndicatorResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('assessment_category_id')
+                Forms\Components\Select::make('assessment_category_id')
+                    ->label('Assessment Category')
+                    ->options(AssessmentCategory::pluck('nama_kategori', 'id'))
                     ->required()
-                    ->numeric(),
+                    ->searchable(),
                 Forms\Components\TextInput::make('nama_indikator')
-                    ->required(),
+                    ->label('Nama Indikator')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\Textarea::make('deskripsi')
+                    ->label('Deskripsi')
+                    ->rows(3)
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('bobot_indikator')
+                    ->label('Bobot Indikator (%)')
                     ->required()
                     ->numeric()
+                    ->step(0.01)
+                    ->minValue(0)
+                    ->maxValue(999.99)
                     ->default(0),
                 Forms\Components\Textarea::make('kriteria_penilaian')
+                    ->label('Kriteria Penilaian')
+                    ->rows(4)
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('skor_maksimal')
+                    ->label('Skor Maksimal')
                     ->required()
                     ->numeric()
+                    ->minValue(1)
+                    ->maxValue(10)
                     ->default(4),
                 Forms\Components\TextInput::make('urutan')
+                    ->label('Urutan')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->default(0),
                 Forms\Components\Toggle::make('is_active')
+                    ->label('Status Aktif')
+                    ->default(true)
                     ->required(),
             ]);
     }
@@ -55,42 +75,63 @@ class AssessmentIndicatorResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('assessment_category_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('nama_indikator')
+                Tables\Columns\TextColumn::make('category.nama_kategori')
+                    ->label('Kategori Assessment')
+                    ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('nama_indikator')
+                    ->label('Nama Indikator')
+                    ->searchable()
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('bobot_indikator')
-                    ->numeric()
+                    ->label('Bobot (%)')
+                    ->numeric(2)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('skor_maksimal')
+                    ->label('Skor Max')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('urutan')
+                    ->label('Urutan')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_active')
+                    ->label('Status')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('assessment_category_id')
+                    ->label('Kategori Assessment')
+                    ->options(AssessmentCategory::pluck('nama_kategori', 'id'))
+                    ->searchable(),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Status Aktif')
+                    ->boolean()
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Tidak Aktif')
+                    ->native(false),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('urutan', 'asc');
     }
 
     public static function getRelations(): array
