@@ -31,7 +31,7 @@ class SchoolImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnEr
     {
         // Validasi data lebih efisien dengan early return
         $requiredFields = ['nama_sekolah', 'npsn', 'alamat'];
-        
+
         foreach ($requiredFields as $field) {
             if (empty(trim($row[$field] ?? ''))) {
                 $this->skippedCount++;

@@ -37,13 +37,13 @@ class AssessmentCategoryResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->placeholder('Contoh: Aspek Kepemimpinan'),
-                        
+
                         Forms\Components\TextInput::make('nama_kategori')
                             ->label('Nama Kategori')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('Contoh: Visi dan Misi Sekolah'),
-                        
+
                         Forms\Components\Textarea::make('deskripsi')
                             ->label('Deskripsi')
                             ->rows(3)
@@ -64,7 +64,7 @@ class AssessmentCategoryResource extends Resource
                             ->step(0.01)
                             ->suffix('%')
                             ->placeholder('0.00'),
-                        
+
                         Forms\Components\TextInput::make('urutan')
                             ->label('Urutan')
                             ->required()
@@ -72,7 +72,7 @@ class AssessmentCategoryResource extends Resource
                             ->min(1)
                             ->default(1)
                             ->placeholder('1'),
-                        
+
                         Forms\Components\Toggle::make('is_active')
                             ->label('Status Aktif')
                             ->default(true)
@@ -91,13 +91,13 @@ class AssessmentCategoryResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->badge(),
-                
+
                 Tables\Columns\TextColumn::make('nama_kategori')
                     ->label('Nama Kategori')
                     ->searchable()
                     ->sortable()
                     ->wrap(),
-                
+
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
                     ->limit(50)
@@ -109,20 +109,20 @@ class AssessmentCategoryResource extends Resource
                         return $state;
                     })
                     ->toggleable(),
-                
+
                 Tables\Columns\TextColumn::make('bobot_penilaian')
                     ->label('Bobot (%)')
                     ->numeric(decimalPlaces: 2)
                     ->suffix('%')
                     ->sortable()
                     ->alignCenter(),
-                
+
                 Tables\Columns\TextColumn::make('urutan')
                     ->label('Urutan')
                     ->numeric()
                     ->sortable()
                     ->alignCenter(),
-                
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Status')
                     ->boolean()
@@ -131,13 +131,13 @@ class AssessmentCategoryResource extends Resource
                     ->trueColor('success')
                     ->falseColor('danger')
                     ->alignCenter(),
-                
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d/m/Y H:i')
@@ -150,7 +150,7 @@ class AssessmentCategoryResource extends Resource
                     ->options(function () {
                         return AssessmentCategory::distinct()->pluck('komponen', 'komponen')->toArray();
                     }),
-                
+
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Status')
                     ->boolean()
@@ -165,10 +165,10 @@ class AssessmentCategoryResource extends Resource
                     ->color('success')
                     ->action(function () {
                         $fileName = 'template-kategori-asesmen-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-                        
+
                         return Excel::download(new AssessmentCategoryTemplateExport, $fileName);
                     }),
-                
+
                 Tables\Actions\Action::make('importExcel')
                     ->label('Import Excel')
                     ->icon('heroicon-o-document-arrow-up')
@@ -179,35 +179,62 @@ class AssessmentCategoryResource extends Resource
                             ->required()
                             ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
                             ->maxSize(5120) // 5MB
+                            ->disk('local')
+                            ->directory('imports')
+                            ->visibility('private')
                             ->helperText('Format yang didukung: .xlsx, .xls (Maksimal 5MB)')
                             ->uploadingMessage('Mengupload file...')
                             ->columnSpanFull(),
                     ])
                     ->action(function (array $data) {
                         try {
-                            $import = new AssessmentCategoryImport();
-                            Excel::import($import, $data['file']);
+                            // Get the uploaded file path - file sudah disimpan di storage/app/private/imports/
+                            $filePath = storage_path('app/private/' . $data['file']);
                             
+                            // Check if file exists
+                            if (!file_exists($filePath)) {
+                                throw new \Exception('File tidak ditemukan. Silakan upload ulang.');
+                            }
+                            
+                            $import = new AssessmentCategoryImport();
+                            Excel::import($import, $filePath);
+
                             $imported = $import->getImportedCount();
                             $skipped = $import->getSkippedCount();
-                            $errors = $import->getErrors();
-                            
+
+                            // Clean up uploaded file
+                            if (file_exists($filePath)) {
+                                unlink($filePath);
+                            }
+
                             if ($imported > 0) {
                                 Notification::make()
                                     ->title('Import Berhasil!')
                                     ->body("Berhasil mengimport {$imported} kategori asesmen. {$skipped} baris dilewati.")
                                     ->success()
                                     ->send();
-                            }
-                            
-                            if (!empty($errors)) {
+                            } else {
                                 Notification::make()
-                                    ->title('Ada Error Saat Import')
-                                    ->body('Beberapa data tidak dapat diimport: ' . implode('; ', array_slice($errors, 0, 3)))
+                                    ->title('Import Selesai')
+                                    ->body("Tidak ada data yang diimport. {$skipped} baris dilewati karena duplikat atau tidak valid.")
                                     ->warning()
                                     ->send();
                             }
+
+                        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+                            $failures = $e->failures();
+                            $errorMessages = [];
                             
+                            foreach ($failures as $failure) {
+                                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+                            }
+                            
+                            Notification::make()
+                                ->title('Validasi Gagal!')
+                                ->body('Error: ' . implode('; ', array_slice($errorMessages, 0, 3)))
+                                ->danger()
+                                ->send();
+                                
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->title('Import Gagal!')

@@ -8,14 +8,11 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
-use Maatwebsite\Excel\Concerns\SkipsFailures;
-use Maatwebsite\Excel\Validators\Failure;
 
-class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidation, WithChunkReading, SkipsEmptyRows, SkipsFailures
+class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidation, WithChunkReading, SkipsEmptyRows
 {
     private $importedCount = 0;
     private $skippedCount = 0;
-    private $errors = [];
 
     /**
      * @param array $row
@@ -26,7 +23,7 @@ class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidatio
     {
         // Validasi data lebih efisien dengan early return
         $requiredFields = ['komponen', 'nama_kategori', 'bobot_penilaian'];
-        
+
         foreach ($requiredFields as $field) {
             if (empty(trim($row[$field] ?? ''))) {
                 $this->skippedCount++;
@@ -101,17 +98,5 @@ class AssessmentCategoryImport implements ToModel, WithHeadingRow, WithValidatio
     public function getSkippedCount(): int
     {
         return $this->skippedCount;
-    }
-
-    public function onFailure(Failure ...$failures)
-    {
-        foreach ($failures as $failure) {
-            $this->errors[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
-        }
-    }
-
-    public function getErrors(): array
-    {
-        return $this->errors;
     }
 }
