@@ -11,18 +11,18 @@ class AssessmentPeriod extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'academic_year',
+        'nama_periode',
+        'tahun_ajaran',
         'semester',
-        'start_date',
-        'end_date',
+        'tanggal_mulai',
+        'tanggal_selesai',
         'status',
-        'description',
+        'deskripsi',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
     ];
 
     public function schoolAssessments(): HasMany
@@ -32,11 +32,11 @@ class AssessmentPeriod extends Model
 
     public function getIsActiveAttribute(): bool
     {
-        return $this->status === 'active';
+        return $this->status === 'aktif';
     }
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', 'aktif');
     }
 }
