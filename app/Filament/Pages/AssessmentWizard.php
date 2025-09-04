@@ -81,7 +81,7 @@ class AssessmentWizard extends Page implements HasForms
                         ->label('Assessment Period')
                         ->options(function () {
                             return AssessmentPeriod::all()->mapWithKeys(function ($period) {
-                                return [$period->id => $period->name ?? 'Unnamed Period'];
+                                return [$period->id => $period->nama_periode ?? 'Unnamed Period'];
                             });
                         })
                         ->required()
@@ -185,7 +185,7 @@ class AssessmentWizard extends Page implements HasForms
                                 return 'No assessment period selected';
                             }
                             $period = AssessmentPeriod::find($this->data['assessment_period_id']);
-                            return $period ? $period->name : 'Assessment period not found';
+                            return $period ? $period->nama_periode : 'Assessment period not found';
                         }),
 
                     Forms\Components\Placeholder::make('total_score')
@@ -445,19 +445,19 @@ class AssessmentWizard extends Page implements HasForms
     protected function parseStructuredCriteria(string $criteria): array
     {
         $options = [];
-        
+
         // Extract key=value pairs using regex
         preg_match_all('/(\d+)\s*=\s*([^,]+)/', $criteria, $matches, PREG_SET_ORDER);
-        
+
         foreach ($matches as $match) {
             $score = (int) $match[1];
             $label = trim($match[2]);
             $options[$score] = $label;
         }
-        
+
         // Sort by score value
         ksort($options);
-        
+
         return $options;
     }
 
@@ -468,7 +468,7 @@ class AssessmentWizard extends Page implements HasForms
     {
         $defaultLabels = [
             1 => 'Sangat Kurang',
-            2 => 'Kurang', 
+            2 => 'Kurang',
             3 => 'Cukup',
             4 => 'Baik',
             5 => 'Sangat Baik'
@@ -502,7 +502,7 @@ class AssessmentWizard extends Page implements HasForms
                 $score = (float) $scoreData['score'];
                 $weight = $indicator->bobot_indikator ?? 1;
                 $maxScore = $indicator->skor_maksimal ?? 4;
-                
+
                 // Normalize score to 0-1 scale, then multiply by weight
                 $normalizedScore = $score / $maxScore;
                 $weightedTotal += $normalizedScore * $weight;
