@@ -113,11 +113,6 @@ class AssessmentWizard extends Page implements HasForms
                             ->options($this->getScoreOptions($indicator))
                             ->inline()
                             ->required(),
-
-                        Forms\Components\Textarea::make("scores.{$indicator->id}.notes")
-                            ->label('Assessment Notes')
-                            ->placeholder('Notes and justification for this score...')
-                            ->rows(2),
                     ]);
             }
 
@@ -292,7 +287,7 @@ class AssessmentWizard extends Page implements HasForms
                             ],
                             [
                                 'skor' => $scoreData['score'],
-                                'catatan' => $scoreData['notes'] ?? null,
+                                'catatan' => null,
                             ]
                         );
                     }
