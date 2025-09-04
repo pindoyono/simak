@@ -327,11 +327,8 @@ class AssessmentWizard extends Page implements HasForms
                 ->success()
                 ->send();
 
-            // Reset wizard state for new assessment
-            $this->currentStep = 1;
-            $this->data = [];
-            $this->assessment = null;
-            $this->form->fill();
+            // Redirect to assessment review page
+            $this->redirect(route('filament.admin.resources.assessment-reviews.index'));
 
         } catch (\Exception $e) {
             Notification::make()
