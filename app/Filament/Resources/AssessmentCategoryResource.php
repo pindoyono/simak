@@ -6,6 +6,7 @@ use App\Filament\Resources\AssessmentCategoryResource\Pages;
 use App\Filament\Resources\AssessmentCategoryResource\RelationManagers;
 use App\Models\AssessmentCategory;
 use App\Exports\AssessmentCategoryTemplateExport;
+use App\Exports\AssessmentCategoryExport;
 use App\Imports\AssessmentCategoryImport;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -165,8 +166,16 @@ class AssessmentCategoryResource extends Resource
                     ->color('success')
                     ->action(function () {
                         $fileName = 'template-kategori-asesmen-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
                         return Excel::download(new AssessmentCategoryTemplateExport, $fileName);
+                    }),
+
+                Tables\Actions\Action::make('exportCategories')
+                    ->label('Export Daftar Kategori (dengan ID)')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->action(function () {
+                        $fileName = 'daftar-kategori-asesmen-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+                        return Excel::download(new AssessmentCategoryExport, $fileName);
                     }),
 
                 Tables\Actions\Action::make('importExcel')
@@ -190,7 +199,7 @@ class AssessmentCategoryResource extends Resource
                         // Get the uploaded file path
                         $uploadedFile = $data['file'];
                         $fullPath = storage_path('app/private/' . $uploadedFile);
-                        
+
                         // Verify file exists
                         if (!file_exists($fullPath)) {
                             Notification::make()

@@ -31,10 +31,11 @@ class AssessmentIndicatorResource extends Resource
                     ->options(AssessmentCategory::pluck('nama_kategori', 'id'))
                     ->required()
                     ->searchable(),
-                Forms\Components\TextInput::make('nama_indikator')
+                Forms\Components\Textarea::make('nama_indikator')
                     ->label('Nama Indikator')
                     ->required()
-                    ->maxLength(255),
+                    ->rows(2)
+                    ->columnSpanFull(),
                 Forms\Components\Textarea::make('deskripsi')
                     ->label('Deskripsi')
                     ->rows(3)
@@ -75,14 +76,18 @@ class AssessmentIndicatorResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('category.nama_kategori')
-                    ->label('Kategori Assessment')
-                    ->sortable()
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('nama_indikator')
                     ->label('Nama Indikator')
                     ->searchable()
-                    ->wrap(),
+                    ->wrap()
+                    ->limit(100)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 100) {
+                            return null;
+                        }
+                        return $state;
+                    }),
                 Tables\Columns\TextColumn::make('bobot_indikator')
                     ->label('Bobot (%)')
                     ->numeric(2)

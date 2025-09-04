@@ -41,7 +41,7 @@ Sistem import/export untuk Assessment Indicator memungkinkan admin untuk:
 | Column | Field Name | Type | Required | Description |
 |--------|------------|------|----------|-------------|
 | A | nama_kategori | String | Yes | Nama Assessment Category (harus sudah ada) |
-| B | nama_indikator | String | Yes | Nama indikator (max 255 karakter) |
+| B | nama_indikator | Text | Yes | Nama indikator (unlimited length) |
 | C | deskripsi | Text | No | Deskripsi indikator |
 | D | bobot_indikator | Decimal | No | Bobot dalam persen (0-999.99) |
 | E | kriteria_penilaian | Text | No | Kriteria penilaian |
@@ -51,7 +51,7 @@ Sistem import/export untuk Assessment Indicator memungkinkan admin untuk:
 
 ### Validation Rules
 - **nama_kategori**: Harus sesuai dengan nama kategori yang ada di database
-- **nama_indikator**: Required, maksimal 255 karakter
+- **nama_indikator**: Required, unlimited length
 - **bobot_indikator**: Numeric, 0-999.99
 - **skor_maksimal**: Integer, 1-10
 - **urutan**: Integer, minimal 0
@@ -101,7 +101,7 @@ Current categories in database:
 CREATE TABLE assessment_indicators (
     id BIGINT UNSIGNED PRIMARY KEY,
     assessment_category_id BIGINT UNSIGNED NOT NULL,
-    nama_indikator VARCHAR(255) NOT NULL,
+    nama_indikator TEXT NOT NULL,
     deskripsi TEXT,
     bobot_indikator DECIMAL(5,2) DEFAULT 0,
     kriteria_penilaian TEXT,

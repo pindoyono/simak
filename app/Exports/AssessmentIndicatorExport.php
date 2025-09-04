@@ -108,7 +108,7 @@ class AssessmentIndicatorExport implements FromCollection, WithHeadings, WithSty
     {
         return [
             'A' => 25, // nama_kategori
-            'B' => 30, // nama_indikator
+            'B' => 50, // nama_indikator (increased for longer text)
             'C' => 40, // deskripsi
             'D' => 15, // bobot_indikator
             'E' => 50, // kriteria_penilaian

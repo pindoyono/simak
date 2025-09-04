@@ -83,7 +83,15 @@ class AssessmentScoreResource extends Resource
                     ->label('Indikator')
                     ->searchable()
                     ->sortable()
-                    ->wrap(),
+                    ->wrap()
+                    ->limit(80)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 80) {
+                            return null;
+                        }
+                        return $state;
+                    }),
                 Tables\Columns\TextColumn::make('skor')
                     ->label('Skor')
                     ->numeric()
