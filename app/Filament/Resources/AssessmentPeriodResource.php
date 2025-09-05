@@ -103,15 +103,15 @@ class AssessmentPeriodResource extends Resource
                             ->content(function (Forms\Get $get): string {
                                 $tanggalMulai = $get('tanggal_mulai');
                                 $tanggalSelesai = $get('tanggal_selesai');
-                                
+
                                 if ($tanggalMulai && $tanggalSelesai) {
                                     $mulai = Carbon::parse($tanggalMulai);
                                     $selesai = Carbon::parse($tanggalSelesai);
                                     $durasi = $mulai->diffInDays($selesai) + 1;
-                                    
+
                                     return "Durasi: {$durasi} hari";
                                 }
-                                
+
                                 return 'Pilih tanggal untuk melihat durasi';
                             })
                             ->columnSpanFull(),
@@ -333,7 +333,7 @@ class AssessmentPeriodResource extends Resource
                         ->color('success')
                         ->requiresConfirmation()
                         ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
-                            $records->each(fn (AssessmentPeriod $record) => 
+                            $records->each(fn (AssessmentPeriod $record) =>
                                 $record->update(['status' => 'aktif'])
                             );
                         })
@@ -404,7 +404,7 @@ class AssessmentPeriodResource extends Resource
                                     ->icon('heroicon-o-calendar'),
                                 Infolists\Components\TextEntry::make('durasi')
                                     ->label('Durasi')
-                                    ->formatStateUsing(fn (AssessmentPeriod $record): string => 
+                                    ->formatStateUsing(fn (AssessmentPeriod $record): string =>
                                         $record->durasi . ' hari'
                                     )
                                     ->icon('heroicon-o-clock'),
@@ -457,7 +457,7 @@ class AssessmentPeriodResource extends Resource
                                     ->falseColor('gray'),
                                 Infolists\Components\TextEntry::make('school_assessments_count')
                                     ->label('Jumlah Asesmen')
-                                    ->state(fn (AssessmentPeriod $record): int => 
+                                    ->state(fn (AssessmentPeriod $record): int =>
                                         $record->schoolAssessments()->count()
                                     )
                                     ->badge()

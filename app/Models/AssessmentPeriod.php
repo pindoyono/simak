@@ -31,7 +31,7 @@ class AssessmentPeriod extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         // Pastikan hanya ada satu periode default
         static::saving(function ($period) {
             if ($period->is_default) {
@@ -61,7 +61,7 @@ class AssessmentPeriod extends Model
     public function getStatusWaktuAttribute(): string
     {
         $today = Carbon::today();
-        
+
         if ($today->lt($this->tanggal_mulai)) {
             return 'akan_datang';
         } elseif ($today->between($this->tanggal_mulai, $this->tanggal_selesai)) {
@@ -84,13 +84,13 @@ class AssessmentPeriod extends Model
     public function getHariTersisaAttribute(): int
     {
         $today = Carbon::today();
-        
+
         if ($today->lt($this->tanggal_mulai)) {
             return $today->diffInDays($this->tanggal_mulai);
         } elseif ($today->lte($this->tanggal_selesai)) {
             return $today->diffInDays($this->tanggal_selesai);
         }
-        
+
         return 0;
     }
 

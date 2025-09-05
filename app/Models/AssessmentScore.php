@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class AssessmentScore extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'school_assessment_id',
@@ -17,36 +19,16 @@ class AssessmentScore extends Model
         'bukti_dukung',
         'catatan',
         'file_bukti',
+        'tanggal_penilaian',
     ];
 
     protected $casts = [
         'skor' => 'decimal:2',
+        'file_bukti' => 'array',
+        'tanggal_penilaian' => 'datetime',
     ];
 
-    // Accessor for score to use skor field
-    public function getScoreAttribute(): float
-    {
-        return $this->skor ?? 0;
-    }
-
-    // Mutator for score to set skor field
-    public function setScoreAttribute($value): void
-    {
-        $this->skor = $value;
-    }
-
-    // Accessor for notes to use catatan field
-    public function getNotesAttribute(): ?string
-    {
-        return $this->catatan;
-    }
-
-    // Mutator for notes to set catatan field
-    public function setNotesAttribute($value): void
-    {
-        $this->catatan = $value;
-    }
-
+    // Relationships
     public function schoolAssessment(): BelongsTo
     {
         return $this->belongsTo(SchoolAssessment::class);
@@ -57,28 +39,49 @@ class AssessmentScore extends Model
         return $this->belongsTo(AssessmentIndicator::class);
     }
 
-    // Enhanced score calculation methods
-    public function getScorePercentageAttribute(): float
+    // Accessors
+    public function getScoreAttribute(): float
     {
-        $indicator = $this->assessmentIndicator;
-        $maxScore = $indicator->skor_maksimal ?? 4;
-        return $maxScore > 0 ? ($this->skor / $maxScore) * 100 : 0;
+        return $this->skor ?? 0;
     }
 
-    public function getWeightedScoreAttribute(): float
+    public function getNotesAttribute(): ?string
+    {
+        return $this->catatan;
+    }
+
+    public function getPersentaseAttribute(): float
     {
         $indicator = $this->assessmentIndicator;
-        $weight = $indicator->bobot_indikator ?? 1;
-        return $this->score_percentage * ($weight / 100);
+        $maxScore = $indicator?->skor_maksimal ?? 4;
+        return $maxScore > 0 ? round(($this->skor / $maxScore) * 100, 2) : 0;
+    }
+
+    public function getSkorBerbobotAttribute(): float
+    {
+        $indicator = $this->assessmentIndicator;
+        $bobot = $indicator?->bobot_indikator ?? 0;
+        return round(($this->persentase * $bobot) / 100, 2);
     }
 
     public function getGradeAttribute(): string
     {
         return match (true) {
-            $this->score_percentage >= 85 => 'A',
-            $this->score_percentage >= 70 => 'B',
-            $this->score_percentage >= 55 => 'C',
+            $this->persentase >= 85 => 'A',
+            $this->persentase >= 70 => 'B',
+            $this->persentase >= 55 => 'C',
             default => 'D',
+        };
+    }
+
+    public function getGradeLabelAttribute(): string
+    {
+        return match ($this->grade) {
+            'A' => 'A - Sangat Baik (≥85%)',
+            'B' => 'B - Baik (70-84%)',
+            'C' => 'C - Cukup (55-69%)',
+            'D' => 'D - Kurang (<55%)',
+            default => 'Tidak Dinilai',
         };
     }
 
@@ -93,19 +96,88 @@ class AssessmentScore extends Model
         };
     }
 
-    // Scope methods for filtering
+    public function getFileCountAttribute(): int
+    {
+        return is_array($this->file_bukti) ? count($this->file_bukti) : 0;
+    }
+
+    public function getHasFilesAttribute(): bool
+    {
+        return $this->file_count > 0;
+    }
+
+    // Mutators
+    public function setScoreAttribute($value): void
+    {
+        $this->skor = $value;
+    }
+
+    public function setNotesAttribute($value): void
+    {
+        $this->catatan = $value;
+    }
+
+    // Scopes
     public function scopeByGrade($query, string $grade)
     {
-        return $query->whereRaw('CASE
-            WHEN (skor / (SELECT skor_maksimal FROM assessment_indicators WHERE id = assessment_scores.assessment_indicator_id)) * 100 >= 85 THEN "A"
-            WHEN (skor / (SELECT skor_maksimal FROM assessment_indicators WHERE id = assessment_scores.assessment_indicator_id)) * 100 >= 70 THEN "B"
-            WHEN (skor / (SELECT skor_maksimal FROM assessment_indicators WHERE id = assessment_scores.assessment_indicator_id)) * 100 >= 55 THEN "C"
-            ELSE "D"
-        END = ?', [$grade]);
+        return $query->whereHas('assessmentIndicator', function ($subQuery) use ($grade) {
+            $condition = match ($grade) {
+                'A' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 85',
+                'B' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 70 AND (assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 85',
+                'C' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 55 AND (assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 70',
+                'D' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 55',
+                default => '1=1',
+            };
+            $subQuery->whereRaw($condition);
+        });
     }
 
     public function scopeHighPerforming($query)
     {
-        return $query->whereRaw('(skor / (SELECT skor_maksimal FROM assessment_indicators WHERE id = assessment_scores.assessment_indicator_id)) * 100 >= 70');
+        return $query->whereHas('assessmentIndicator', function ($subQuery) {
+            $subQuery->whereRaw('(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 85');
+        });
+    }
+
+    public function scopeLowPerforming($query)
+    {
+        return $query->whereHas('assessmentIndicator', function ($subQuery) {
+            $subQuery->whereRaw('(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 55');
+        });
+    }
+
+    public function scopeWithFiles($query)
+    {
+        return $query->whereNotNull('file_bukti')->where('file_bukti', '!=', '[]');
+    }
+
+    public function scopeWithEvidence($query)
+    {
+        return $query->whereNotNull('bukti_dukung')->where('bukti_dukung', '!=', '');
+    }
+
+    // Activity Log
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['skor', 'bukti_dukung', 'catatan'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
+    // Helper Methods
+    public function isExcellent(): bool
+    {
+        return $this->grade === 'A';
+    }
+
+    public function isGood(): bool
+    {
+        return in_array($this->grade, ['A', 'B']);
+    }
+
+    public function needsImprovement(): bool
+    {
+        return in_array($this->grade, ['C', 'D']);
     }
 }
