@@ -13,7 +13,7 @@ class ListAssessmentReviews extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // CreateAction removed - assessment reviews are created automatically by the wizard
         ];
     }
 }

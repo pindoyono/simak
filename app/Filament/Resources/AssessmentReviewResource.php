@@ -85,7 +85,6 @@ class AssessmentReviewResource extends Resource
     {
         return [
             'index' => Pages\ListAssessmentReviews::route('/'),
-            'create' => Pages\CreateAssessmentReview::route('/create'),
             'edit' => Pages\EditAssessmentReview::route('/{record}/edit'),
         ];
     }
