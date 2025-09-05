@@ -1,118 +1,90 @@
 <x-filament-panels::page>
-    <!-- Page Header -->
-    <x-filament::section>
-        <x-slot name="heading">
-            Assessment Wizard
-        </x-slot>
-        <x-slot name="description">
-            Complete your assessment in {{ count($this->getSteps()) }} easy steps. Step {{ $this->currentStep }} of
-            {{ count($this->getSteps()) }}.
-        </x-slot>
+    <style>
+        /* Force all radio buttons horizontal - no scroll */
+        .fi-fo-radio .fi-fo-field-wrp-label+div,
+        .fi-fo-radio fieldset,
+        .fi-fo-radio [role="radiogroup"],
+        .fi-fo-radio div[class*="grid"],
+        .fi-fo-radio .grid,
+        .fi-fo-radio>div>div,
+        .radio-horizontal,
+        [data-field-wrapper] .fi-fo-radio div {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 0.5rem !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            width: 100% !important;
+            overflow: visible !important;
+        }
 
-        <!-- Progress Steps -->
-        <div class="mt-6">
-            <div class="flex items-center justify-between">
-                @foreach ($this->getSteps() as $step => $label)
-                    <div class="flex items-center {{ $step < count($this->getSteps()) ? 'flex-1' : '' }}">
-                        <div class="flex items-center">
-                            <div @class([
-                                'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
-                                'bg-primary-600 text-white' => $this->currentStep === $step,
-                                'bg-green-600 text-white' => $this->currentStep > $step,
-                                'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300' =>
-                                    $this->currentStep < $step,
-                            ])>
-                                @if ($this->currentStep > $step)
-                                    <x-heroicon-m-check class="w-4 h-4" />
-                                @else
-                                    {{ $step }}
-                                @endif
-                            </div>
-                            <div class="ml-3">
-                                <p @class([
-                                    'text-sm font-medium',
-                                    'text-primary-600 dark:text-primary-400' => $this->currentStep === $step,
-                                    'text-green-600 dark:text-green-400' => $this->currentStep > $step,
-                                    'text-gray-500 dark:text-gray-400' => $this->currentStep < $step,
-                                ])>
-                                    {{ $label }}
-                                </p>
-                            </div>
-                        </div>
-                        @if ($step < count($this->getSteps()))
-                            <div class="flex-1 mx-4">
-                                <div @class([
-                                    'h-0.5 w-full',
-                                    'bg-green-600' => $this->currentStep > $step,
-                                    'bg-gray-200 dark:bg-gray-700' => $this->currentStep <= $step,
-                                ])></div>
-                            </div>
-                        @endif
+        .fi-fo-radio .fi-fo-field-wrp-label+div>div,
+        .fi-fo-radio fieldset>div,
+        .fi-fo-radio [role="radiogroup"]>div,
+        .radio-horizontal>div {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            white-space: nowrap !important;
+            margin: 0 !important;
+            display: inline-flex !important;
+            font-size: 0.8rem !important;
+        }
+
+        /* Make radio button labels smaller and fit better */
+        .fi-fo-radio label,
+        .radio-horizontal label {
+            font-size: 0.8rem !important;
+            padding: 0.25rem 0.5rem !important;
+            text-overflow: ellipsis !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+        }
+
+        /* Override any grid classes that might stack items */
+        .fi-fo-radio .grid-cols-1,
+        .fi-fo-radio .grid-cols-2,
+        .fi-fo-radio .grid-cols-3,
+        .fi-fo-radio .grid-cols-4 {
+            display: flex !important;
+            grid-template-columns: none !important;
+        }
+
+        /* Compact spacing */
+        .fi-section-content-ctn {
+            padding: 1rem !important;
+        }
+
+        .fi-section-header {
+            padding: 0.75rem 1rem !important;
+        }
+
+        .fi-fo-field-wrp {
+            margin-bottom: 0.75rem !important;
+        }
+
+        /* Remove scroll - make container fit content */
+        .fi-fo-radio {
+            width: 100% !important;
+            overflow: visible !important;
+        }
+    </style>
+
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
+                            Wizard Penilaian Sekolah
+                        </h1>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Sistem penilaian sekolah dalam 3 langkah mudah
+                        </p>
                     </div>
-                @endforeach
-            </div>
-        </div>
-    </x-filament::section>
-
-    <!-- Form Content -->
-    <x-filament::section>
-        <x-slot name="heading">
-            {{ $this->getCurrentStepLabel() }}
-        </x-slot>
-
-        <form wire:submit="submit">
-            {{ $this->form }}
-        </form>
-    </x-filament::section>
-
-    <!-- Navigation -->
-    <x-filament::section>
-        <div class="flex justify-between items-center">
-            <div>
-                @if ($this->currentStep > 1)
-                    <x-filament::button wire:click="previousStep" color="gray" icon="heroicon-m-arrow-left"
-                        icon-position="before">
-                        Previous
-                    </x-filament::button>
-                @endif
-            </div>
-
-            <div class="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
-                <span>Progress:</span>
-                <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div class="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                        style="width: {{ ($this->currentStep / count($this->getSteps())) * 100 }}%"></div>
+                    <x-heroicon-o-academic-cap class="h-8 w-8 text-primary-600" />
                 </div>
-                <span>{{ round(($this->currentStep / count($this->getSteps())) * 100) }}%</span>
-            </div>
 
-            <div>
-                @if ($this->currentStep < count($this->getSteps()))
-                    <x-filament::button wire:click="nextStep" icon="heroicon-m-arrow-right" icon-position="after">
-                        Next
-                    </x-filament::button>
-                @else
-                    <x-filament::button type="submit" wire:click="submit" color="success" icon="heroicon-m-check"
-                        icon-position="before">
-                        Submit Assessment
-                    </x-filament::button>
-                @endif
-            </div>
-        </div>
-    </x-filament::section>
-
-    <!-- Loading State -->
-    <div wire:loading.delay class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
-        <div
-            class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-6 mx-4 max-w-sm w-full">
-            <div class="flex flex-col items-center space-y-4">
-                <x-filament::loading-indicator class="h-8 w-8 text-primary-600" />
-                <div class="text-center">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Processing Assessment</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Please wait while we save your data...
-                    </p>
-                </div>
+                {{ $this->form }}
             </div>
         </div>
     </div>

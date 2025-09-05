@@ -37,7 +37,7 @@ class AssessmentReport extends Page implements HasForms, HasTable
     protected static ?int $navigationSort = 4;
 
     public ?array $data = [];
-    
+
     public function mount(): void
     {
         $this->form->fill();
@@ -132,15 +132,27 @@ class AssessmentReport extends Page implements HasForms, HasTable
             ->filters([
                 SelectFilter::make('assessment_period_id')
                     ->label('Periode')
-                    ->relationship('schoolAssessment.period', 'nama_periode'),
+                    ->options(
+                        \App\Models\AssessmentPeriod::query()
+                            ->pluck('nama_periode', 'id')
+                            ->toArray()
+                    ),
 
                 SelectFilter::make('assessment_category_id')
                     ->label('Kategori')
-                    ->relationship('assessmentIndicator.category', 'nama_kategori'),
+                    ->options(
+                        \App\Models\AssessmentCategory::query()
+                            ->pluck('nama_kategori', 'id')
+                            ->toArray()
+                    ),
 
                 SelectFilter::make('school_id')
                     ->label('Sekolah')
-                    ->relationship('schoolAssessment.school', 'nama_sekolah'),
+                    ->options(
+                        \App\Models\School::query()
+                            ->pluck('nama_sekolah', 'id')
+                            ->toArray()
+                    ),
             ])
             ->modifyQueryUsing(function (Builder $query) {
                 $data = $this->data;
@@ -174,7 +186,7 @@ class AssessmentReport extends Page implements HasForms, HasTable
                     ->label('Detail')
                     ->icon('heroicon-m-eye')
                     ->color('info')
-                    ->url(fn (AssessmentScore $record): string => 
+                    ->url(fn (AssessmentScore $record): string =>
                         route('filament.admin.resources.assessment-scores.view', ['record' => $record])
                     ),
             ]);

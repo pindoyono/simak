@@ -11,527 +11,620 @@ use App\Models\AssessmentScore;
 use App\Models\AssessmentFile;
 use App\Models\AssessmentReview;
 use Filament\Forms;
+use Filament\Forms\Components\Wizard;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
-use Filament\Support\Exceptions\Halt;
 use Filament\Notifications\Notification;
+use Filament\Actions\Action;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
+use App\Traits\AssessmentMemoryOptimization;
 
 class AssessmentWizard extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, AssessmentMemoryOptimization;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static string $view = 'filament.pages.assessment-wizard';
-    protected static ?string $navigationLabel = 'Assessment Wizard';
-    protected static ?string $title = 'School Assessment Wizard';
-    protected static ?string $navigationGroup = 'Assessment Management';
+    protected static ?string $navigationLabel = 'Wizard Penilaian';
+    protected static ?string $title = 'Wizard Penilaian Sekolah';
+    protected static ?string $navigationGroup = 'Penilaian';
     protected static ?int $navigationSort = 1;
 
     public ?array $data = [];
-    public int $currentStep = 1;
-    public ?SchoolAssessment $assessment = null;
 
     public function mount(): void
     {
+        $this->setMemoryLimit('assessment_wizard');
+        $this->setExecutionTimeLimit();
+        $this->checkMemoryUsage('mount_start');
+
         $this->form->fill();
     }
 
     public function form(Form $form): Form
     {
         return $form
-            ->schema($this->getFormSchema())
+            ->schema([
+                Wizard::make([
+                    // Step 1: School & Period Selection
+                    Wizard\Step::make('informasi_dasar')
+                        ->label('Informasi Dasar')
+                        ->description('Pilih sekolah dan periode')
+                        ->icon('heroicon-m-building-office-2')
+                        ->schema([
+                            Forms\Components\Grid::make(3)
+                                ->schema([
+                                    Forms\Components\Select::make('school_id')
+                                        ->label('Sekolah')
+                                        ->options(School::all()->pluck('nama_sekolah', 'id'))
+                                        ->required()
+                                        ->searchable()
+                                        ->preload()
+                                        ->live()
+                                        ->placeholder('Pilih sekolah'),
+
+                                    Forms\Components\Select::make('assessment_period_id')
+                                        ->label('Periode Penilaian')
+                                        ->options(AssessmentPeriod::active()->pluck('nama_periode', 'id'))
+                                        ->required()
+                                        ->live()
+                                        ->placeholder('Pilih periode'),
+
+                                    Forms\Components\DatePicker::make('tanggal_asesmen')
+                                        ->label('Tanggal Penilaian')
+                                        ->required()
+                                        ->default(now())
+                                        ->maxDate(now()),
+                                ]),
+
+                            Forms\Components\Textarea::make('notes')
+                                ->label('Catatan')
+                                ->placeholder('Catatan tambahan...')
+                                ->rows(2)
+                                ->columnSpanFull(),
+                        ]),
+
+                    // Step 2: Assessment Scoring
+                    Wizard\Step::make('penilaian_skor')
+                        ->label('Penilaian & Skor')
+                        ->description('Berikan skor untuk setiap indikator')
+                        ->icon('heroicon-m-star')
+                        ->schema($this->getAssessmentScoringStep()),
+
+                    // Step 3: Review & Submit
+                    Wizard\Step::make('review_submit')
+                        ->label('Review & Submit')
+                        ->description('Tinjau dan submit')
+                        ->icon('heroicon-m-check-badge')
+                        ->schema($this->getReviewStep()),
+                ])
+                ->submitAction(
+                    Action::make('submit')
+                        ->label('Submit Penilaian')
+                        ->icon('heroicon-m-paper-airplane')
+                        ->color('success')
+                        ->size('lg')
+                        ->action('submit')
+                )
+                ->cancelAction(
+                    Action::make('cancel')
+                        ->label('Batal')
+                        ->color('gray')
+                        ->url(route('filament.admin.pages.dashboard'))
+                )
+                ->skippable()
+                ->persistStepInQueryString()
+                ->columnSpanFull(),
+            ])
             ->statePath('data');
-    }
-
-    protected function getFormSchema(): array
-    {
-        return match ($this->currentStep) {
-            1 => $this->getSchoolSelectionStep(),
-            2 => $this->getAssessmentScoringStep(),
-            3 => $this->getFileUploadStep(),
-            4 => $this->getReviewStep(),
-            default => [],
-        };
-    }
-
-    protected function getSchoolSelectionStep(): array
-    {
-        return [
-            Forms\Components\Section::make('School Information')
-                ->description('Select the school and assessment period for this evaluation.')
-                ->schema([
-                    Forms\Components\Select::make('school_id')
-                        ->label('School')
-                        ->options(function () {
-                            return School::all()->mapWithKeys(function ($school) {
-                                return [$school->id => $school->nama_sekolah ?? 'Unnamed School'];
-                            });
-                        })
-                        ->required()
-                        ->searchable()
-                        ->placeholder('Select a school'),
-
-                    Forms\Components\Select::make('assessment_period_id')
-                        ->label('Assessment Period')
-                        ->options(function () {
-                            return AssessmentPeriod::all()->mapWithKeys(function ($period) {
-                                return [$period->id => $period->nama_periode ?? 'Unnamed Period'];
-                            });
-                        })
-                        ->required()
-                        ->placeholder('Select assessment period'),
-
-                    Forms\Components\Textarea::make('notes')
-                        ->label('Initial Notes')
-                        ->placeholder('Any preliminary notes about this assessment...')
-                        ->rows(3),
-                ]),
-        ];
     }
 
     protected function getAssessmentScoringStep(): array
     {
-        $categories = AssessmentCategory::with('indicators')->get();
+        $this->checkMemoryUsage('scoring_step_start');
+
+        // OPTIMASI: Eager load dengan limit dan cache
+        $categories = AssessmentCategory::with(['indicators' => function ($query) {
+            $query->orderBy('urutan_tampil')
+                  ->select(['id', 'nama_indikator', 'deskripsi_indikator', 'assessment_category_id', 'kriteria_penilaian', 'skor_maksimal', 'bobot_indikator']);
+        }])
+        ->orderBy('urutan_tampil')
+        ->select(['id', 'nama_kategori', 'urutan_tampil'])
+        ->get();
+
         $schema = [];
 
         foreach ($categories as $category) {
+            if ($category->indicators->isEmpty()) continue;
+
             $indicatorFields = [];
 
             foreach ($category->indicators as $indicator) {
-                $indicatorFields[] = Forms\Components\Section::make($indicator->name)
-                    ->description($indicator->description)
+                $indicatorFields[] = Forms\Components\Section::make($indicator->nama_indikator)
+                    ->description($indicator->deskripsi_indikator)
                     ->collapsible()
+                    ->collapsed(false) // Default terbuka
                     ->schema([
-                        Forms\Components\Radio::make("scores.{$indicator->id}.score")
-                            ->label('Score')
-                            ->options($this->getScoreOptions($indicator))
-                            ->inline()
-                            ->required(),
+                        Forms\Components\Radio::make("scores.{$indicator->id}.skor")
+                            ->label('Skor')
+                            ->options($this->getCachedScoreOptions($indicator)) // OPTIMASI: Cache options
+                            ->required()
+                            ->live(false) // OPTIMASI: Disable live untuk performa
+                            ->inline(true)
+                            ->extraAttributes([
+                                'class' => 'radio-horizontal',
+                                'style' => 'display: flex; flex-wrap: nowrap; gap: 0.5rem; font-size: 0.8rem;'
+                            ])
+                            ->columnSpanFull(),
+                    ])
+                    ->compact(); // Make sections more compact
+            }
+
+            $schema[] = Forms\Components\Section::make($category->nama_kategori)
+                ->collapsible()
+                ->collapsed(false) // Default terbuka
+                ->compact() // Make sections more compact
+                ->schema($indicatorFields);
+        }
+
+        // Add total score display
+        $schema[] = Forms\Components\Section::make('Ringkasan Skor')
+            ->collapsible()
+            ->collapsed(false)
+            ->compact()
+            ->schema([
+                Forms\Components\Placeholder::make('total_score_display')
+                    ->label('Total Skor')
+                    ->content(function (Forms\Get $get) {
+                        $totalScore = $this->calculateTotalScore($get('scores') ?? []);
+                        return number_format($totalScore, 2) . ' / 4.00';
+                    })
+                    ->extraAttributes(['class' => 'text-lg font-semibold']),
+            ]);
+
+        $this->checkMemoryUsage('scoring_step_end');
+
+        return $schema;
+    }
+
+    // DISABLED: File upload step removed for performance optimization
+    /*
+    protected function getFileUploadStep(): array
+    {
+        $categories = AssessmentCategory::with(['indicators' => function ($query) {
+            $query->orderBy('urutan_tampil');
+        }])->orderBy('urutan_tampil')->get();
+
+        $schema = [];
+
+        foreach ($categories as $category) {
+            if ($category->indicators->isEmpty()) continue;
+
+            $categoryFields = [];
+
+            foreach ($category->indicators as $indicator) {
+                $categoryFields[] = Forms\Components\Section::make($indicator->nama_indikator)
+                    ->description('Upload dokumen pendukung untuk indikator ini')
+                    ->collapsible()
+                    ->collapsed(false) // Default terbuka
+                    ->schema([
+                        Forms\Components\FileUpload::make("files.{$indicator->id}")
+                            ->label('Dokumen Pendukung')
+                            ->multiple()
+                            ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                            ->maxSize(10240) // 10MB
+                            ->directory('assessment-files')
+                            ->disk('public')
+                            ->preserveFilenames()
+                            ->downloadable()
+                            ->openable()
+                            ->previewable(false)
+                            ->helperText('Format: PDF, DOC, DOCX, JPG, PNG. Maksimal 10MB per file.'),
                     ]);
             }
 
-            $schema[] = Forms\Components\Section::make($category->name)
-                ->description($category->description)
-                ->schema($indicatorFields)
+            $schema[] = Forms\Components\Section::make($category->nama_kategori)
+                ->description("Upload dokumen untuk kategori: {$category->nama_kategori}")
                 ->collapsible()
-                ->collapsed(false);
+                ->collapsed(false)
+                ->schema($categoryFields);
         }
 
         return $schema;
     }
-
-    protected function getFileUploadStep(): array
-    {
-        $indicators = AssessmentIndicator::all();
-        $schema = [];
-
-        foreach ($indicators as $indicator) {
-            $schema[] = Forms\Components\Section::make($indicator->name)
-                ->description('Upload supporting documents for this indicator')
-                ->schema([
-                    Forms\Components\FileUpload::make("files.{$indicator->id}")
-                        ->label('Supporting Documents')
-                        ->multiple()
-                        ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
-                        ->maxSize(10240) // 10MB
-                        ->directory('assessment-files')
-                        ->visibility('private')
-                        ->downloadable()
-                        ->previewable(false),
-
-                    Forms\Components\Textarea::make("file_descriptions.{$indicator->id}")
-                        ->label('File Description')
-                        ->placeholder('Brief description of the uploaded files...')
-                        ->rows(2),
-                ])
-                ->collapsible()
-                ->collapsed(true);
-        }
-
-        return $schema;
-    }
+    */
 
     protected function getReviewStep(): array
     {
         return [
-            Forms\Components\Section::make('Assessment Review')
-                ->description('Review your assessment before submission')
+            Forms\Components\Section::make('Ringkasan')
+                ->collapsible()
+                ->collapsed(false)
+                ->compact()
                 ->schema([
-                    Forms\Components\Placeholder::make('school_info')
-                        ->label('School')
-                        ->content(function (): string {
-                            if (!isset($this->data['school_id'])) {
-                                return 'No school selected';
-                            }
-                            $school = School::find($this->data['school_id']);
-                            return $school ? $school->nama_sekolah : 'School not found';
-                        }),
+                    Forms\Components\Grid::make(4)
+                        ->schema([
+                            Forms\Components\Placeholder::make('review_school')
+                                ->label('Sekolah')
+                                ->content(function (Forms\Get $get) {
+                                    $schoolId = $get('school_id');
+                                    if ($schoolId) {
+                                        $school = School::find($schoolId);
+                                        return $school?->nama_sekolah ?? '-';
+                                    }
+                                    return '-';
+                                }),
 
-                    Forms\Components\Placeholder::make('assessment_period_info')
-                        ->label('Assessment Period')
-                        ->content(function (): string {
-                            if (!isset($this->data['assessment_period_id'])) {
-                                return 'No assessment period selected';
-                            }
-                            $period = AssessmentPeriod::find($this->data['assessment_period_id']);
-                            return $period ? $period->nama_periode : 'Assessment period not found';
-                        }),
+                            Forms\Components\Placeholder::make('review_period')
+                                ->label('Periode')
+                                ->content(function (Forms\Get $get) {
+                                    $periodId = $get('assessment_period_id');
+                                    if ($periodId) {
+                                        $period = AssessmentPeriod::find($periodId);
+                                        return $period?->nama_periode ?? '-';
+                                    }
+                                    return '-';
+                                }),
 
-                    Forms\Components\Placeholder::make('total_score')
-                        ->label('Rata-rata Skor')
-                        ->content(function (): string {
-                            $average = $this->calculateTotalScore($this->data);
-                            $grade = match (true) {
-                                $average >= 3.5 => 'Sangat Baik',
-                                $average >= 2.5 => 'Baik',
-                                $average >= 1.5 => 'Cukup Baik',
-                                default => 'Kurang'
-                            };
-                            return $average . '/4 (' . $grade . ')';
-                        }),
+                            Forms\Components\Placeholder::make('review_date')
+                                ->label('Tanggal')
+                                ->content(function (Forms\Get $get) {
+                                    $date = $get('tanggal_asesmen');
+                                    return $date ? date('d/m/Y', strtotime($date)) : '-';
+                                }),
 
-                    Forms\Components\Placeholder::make('grade')
-                        ->label('Final Grade')
-                        ->content(fn (): string => $this->calculateFinalGrade($this->data)),
+                            Forms\Components\Placeholder::make('review_total_score')
+                                ->label('Total Skor')
+                                ->content(function (Forms\Get $get) {
+                                    $totalScore = $this->calculateTotalScore($get('scores') ?? []);
+                                    return number_format($totalScore, 2) . ' / 4.00';
+                                })
+                                ->extraAttributes(['class' => 'text-lg font-semibold text-primary-600']),
+                        ]),
+                ]),
 
-                    Forms\Components\Placeholder::make('scores_count')
-                        ->label('Indicators Scored')
-                        ->content(function (): string {
-                            $scores = $this->data['scores'] ?? [];
-                            $validScores = array_filter($scores, fn($score) => isset($score['score']) && is_numeric($score['score']));
-                            return count($validScores) . ' indicators scored';
-                        }),
+            Forms\Components\Section::make('Konfirmasi')
+                ->compact()
+                ->schema([
+                    Forms\Components\Checkbox::make('confirm_accuracy')
+                        ->label('Data yang diisi sudah akurat')
+                        ->required(),
 
-                    Forms\Components\Textarea::make('final_comments')
-                        ->label('Final Comments')
-                        ->placeholder('Any final comments about this assessment...')
-                        ->rows(3),
+                    Forms\Components\Checkbox::make('confirm_documents')
+                        ->label('Siap untuk submit penilaian')
+                        ->required(),
                 ]),
         ];
     }
 
-    public function nextStep(): void
+    protected function getCachedScoreOptions(AssessmentIndicator $indicator): array
     {
-        try {
-            $stepData = $this->form->getState();
+        // OPTIMASI: Cache score options untuk menghindari parsing berulang
+        static $optionsCache = [];
 
-            // Merge current step data with existing data
-            $this->data = array_merge($this->data, $stepData);
+        $cacheKey = "indicator_{$indicator->id}";
 
-            if ($this->currentStep < 4) {
-                $this->currentStep++;
-                $this->form->fill($this->data);
-            }
-        } catch (Halt $exception) {
-            return;
-        }
-    }
-
-    public function previousStep(): void
-    {
-        if ($this->currentStep > 1) {
-            $this->currentStep--;
-            $this->form->fill($this->data);
-        }
-    }
-
-    public function submit(): void
-    {
-        try {
-            $currentStepData = $this->form->getState();
-
-            // Merge current step data with all previous data
-            $allData = array_merge($this->data, $currentStepData);
-
-            DB::transaction(function () use ($allData) {
-                // Validate required fields
-                if (!isset($allData['school_id']) || !isset($allData['assessment_period_id'])) {
-                    throw new \Exception('School and Assessment Period are required');
-                }
-
-                // Ensure user is authenticated
-                if (!Auth::check()) {
-                    throw new \Exception('User must be authenticated to submit assessment');
-                }
-
-                // Create or update school assessment
-                $this->assessment = SchoolAssessment::updateOrCreate(
-                    [
-                        'school_id' => $allData['school_id'],
-                        'assessment_period_id' => $allData['assessment_period_id'],
-                        'assessor_id' => Auth::id(),
-                    ],
-                    [
-                        'status' => 'submitted',
-                        'total_score' => $this->calculateTotalScore($allData),
-                        'grade' => $this->calculateGradeForDatabase($allData),
-                        'submitted_at' => now(),
-                        'catatan' => $allData['notes'] ?? null,
-                        'tanggal_asesmen' => now()->toDateString(),
-                    ]
-                );
-
-                // Save assessment scores
-                if (isset($allData['scores'])) {
-                    foreach ($allData['scores'] as $indicatorId => $scoreData) {
-                        AssessmentScore::updateOrCreate(
-                            [
-                                'school_assessment_id' => $this->assessment->id,
-                                'assessment_indicator_id' => $indicatorId,
-                            ],
-                            [
-                                'skor' => $scoreData['score'],
-                                'catatan' => null,
-                            ]
-                        );
-                    }
-                }
-
-                // Save uploaded files
-                if (isset($allData['files'])) {
-                    foreach ($allData['files'] as $indicatorId => $files) {
-                        if (is_array($files)) {
-                            foreach ($files as $filePath) {
-                                if ($filePath) {
-                                    $this->saveAssessmentFile($indicatorId, $filePath, $allData['file_descriptions'][$indicatorId] ?? null);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Create review record if submitted
-                AssessmentReview::create([
-                    'school_assessment_id' => $this->assessment->id,
-                    'reviewer_id' => Auth::id(),
-                    'status' => 'submitted',
-                    'comments' => $allData['final_comments'] ?? null,
-                    'reviewed_at' => now(),
-                ]);
-            });
-
-            Notification::make()
-                ->title('Assessment submitted successfully!')
-                ->body('Assessment has been saved and submitted for review.')
-                ->success()
-                ->send();
-
-            // Redirect to assessment review page
-            $this->redirect(route('filament.admin.resources.assessment-reviews.index'));
-
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error saving assessment')
-                ->body('Error: ' . $e->getMessage())
-                ->danger()
-                ->send();
-
-            // Log the error for debugging
-            Log::error('Assessment submission error', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'user_id' => Auth::id(),
-                'data_keys' => array_keys($this->data),
-            ]);
-        }
-    }
-
-    protected function saveAssessmentFile(int $indicatorId, string $filePath, ?string $description): void
-    {
-        $file = Storage::disk('local')->get($filePath);
-        $fileInfo = pathinfo($filePath);
-
-        AssessmentFile::create([
-            'school_assessment_id' => $this->assessment->id,
-            'assessment_indicator_id' => $indicatorId,
-            'file_name' => $fileInfo['basename'],
-            'file_path' => $filePath,
-            'file_type' => $fileInfo['extension'] ?? 'unknown',
-            'mime_type' => mime_content_type(Storage::disk('local')->path($filePath)),
-            'file_size' => Storage::disk('local')->size($filePath),
-            'description' => $description,
-            'uploaded_by' => Auth::id(),
-        ]);
-    }
-
-    protected function getSchoolInfo(): string
-    {
-        if (!isset($this->data['school_id'])) {
-            return 'No school selected';
+        if (!isset($optionsCache[$cacheKey])) {
+            $optionsCache[$cacheKey] = $this->getScoreOptions($indicator);
         }
 
-        $school = School::find($this->data['school_id']);
-        return $school ? $school->nama_sekolah : 'School not found';
+        return $optionsCache[$cacheKey];
     }
 
-    public function getSteps(): array
-    {
-        return [
-            1 => 'School Selection',
-            2 => 'Assessment Scoring',
-            3 => 'File Upload',
-            4 => 'Review & Submit',
-        ];
-    }
-
-    public function getCurrentStepLabel(): string
-    {
-        return $this->getSteps()[$this->currentStep] ?? 'Unknown Step';
-    }
-
-    /**
-     * Get score options for an indicator based on database configuration
-     */
     protected function getScoreOptions(AssessmentIndicator $indicator): array
     {
-        $maxScore = $indicator->skor_maksimal ?? 4;
         $criteria = $indicator->kriteria_penilaian;
 
-        // If criteria_penilaian is defined and has specific format, parse it
+        // Parse structured criteria if available
         if ($criteria && $this->isStructuredCriteria($criteria)) {
             return $this->parseStructuredCriteria($criteria);
         }
 
-        // Default fallback based on skor_maksimal
+        // Default options based on max score
+        $maxScore = $indicator->skor_maksimal ?? 4;
         return $this->generateDefaultOptions($maxScore);
     }
 
-    /**
-     * Check if criteria follows structured format like "1=Label, 2=Label"
-     */
     protected function isStructuredCriteria(string $criteria): bool
     {
         return preg_match('/\d+\s*=\s*[^,]+/', $criteria);
     }
 
-    /**
-     * Parse structured criteria like "Skala 1-4: 1=Sangat Kurang, 2=Kurang, 3=Baik, 4=Sangat Baik"
-     */
     protected function parseStructuredCriteria(string $criteria): array
     {
         $options = [];
 
-        // Extract key=value pairs using regex
         preg_match_all('/(\d+)\s*=\s*([^,]+)/', $criteria, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
             $score = (int) $match[1];
             $label = trim($match[2]);
-            $options[$score] = $label;
+            $options[$score] = "{$score} - {$label}";
         }
 
-        // Sort by score value
         ksort($options);
-
         return $options;
     }
 
-    /**
-     * Generate default options based on maximum score
-     */
     protected function generateDefaultOptions(int $maxScore): array
     {
-        $defaultLabels = [
-            1 => 'Sangat Kurang',
-            2 => 'Kurang',
-            3 => 'Cukup',
-            4 => 'Baik',
-            5 => 'Sangat Baik'
+        $labels = [
+            1 => 'Kurang',
+            2 => 'Cukup',
+            3 => 'Baik',
+            4 => 'Sangat Baik',
+            5 => 'Excellent'
         ];
 
         $options = [];
         for ($i = 1; $i <= $maxScore; $i++) {
-            $options[$i] = $defaultLabels[$i] ?? "Level {$i}";
+            $options[$i] = "{$i} - " . ($labels[$i] ?? "Level {$i}");
         }
 
         return $options;
     }
 
-    /**
-     * Calculate weighted average score with enhanced algorithm
-     */
-    protected function calculateTotalScore(array $data = null): float
+    protected function getScoreDescriptions(AssessmentIndicator $indicator): array
     {
-        $scores = $data['scores'] ?? $this->data['scores'] ?? [];
+        $criteria = $indicator->kriteria_penilaian;
 
-        if (empty($scores)) {
-            return 0;
+        // If criteria has structured format, extract descriptions
+        if ($criteria && $this->isStructuredCriteria($criteria)) {
+            return $this->parseScoreDescriptions($criteria);
         }
+
+        // Default descriptions based on max score
+        $maxScore = $indicator->skor_maksimal ?? 4;
+        return $this->generateDefaultDescriptions($maxScore);
+    }
+
+    protected function parseScoreDescriptions(string $criteria): array
+    {
+        $descriptions = [];
+
+        // Extract key=value pairs for descriptions
+        preg_match_all('/(\d+)\s*=\s*([^,]+)/', $criteria, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $score = (int) $match[1];
+            $label = trim($match[2]);
+            $descriptions[$score] = $this->getDetailedDescription($score, $label);
+        }
+
+        return $descriptions;
+    }
+
+    protected function generateDefaultDescriptions(int $maxScore): array
+    {
+        $descriptions = [
+            1 => 'Tidak memenuhi standar minimal yang ditetapkan',
+            2 => 'Memenuhi sebagian kecil standar yang ditetapkan',
+            3 => 'Memenuhi standar dasar yang ditetapkan',
+            4 => 'Memenuhi standar dengan baik dan konsisten',
+            5 => 'Melebihi standar yang ditetapkan dengan sangat baik'
+        ];
+
+        $result = [];
+        for ($i = 1; $i <= $maxScore; $i++) {
+            $result[$i] = $descriptions[$i] ?? "Kriteria level {$i}";
+        }
+
+        return $result;
+    }
+
+    protected function getDetailedDescription(int $score, string $label): string
+    {
+        $baseDescriptions = [
+            1 => "($label) - Belum memenuhi kriteria standar",
+            2 => "($label) - Memenuhi kriteria minimal",
+            3 => "($label) - Memenuhi kriteria standar",
+            4 => "($label) - Memenuhi kriteria dengan baik",
+            5 => "($label) - Melebihi kriteria yang diharapkan"
+        ];
+
+        return $baseDescriptions[$score] ?? "($label) - Level penilaian $score";
+    }
+
+    protected function calculateTotalScore(array $scores): float
+    {
+        if (empty($scores)) return 0;
+
+        $this->checkMemoryUsage('calculate_score_start');
+
+        // Use optimized cached indicator loading
+        $indicatorIds = array_keys($scores);
+        $indicators = $this->getCachedIndicators($indicatorIds);
 
         $totalWeightedScore = 0;
         $totalWeight = 0;
 
         foreach ($scores as $indicatorId => $scoreData) {
-            if (!isset($scoreData['score']) || !is_numeric($scoreData['score'])) {
+            if (empty($scoreData['skor']) || !is_numeric($scoreData['skor'])) {
                 continue;
             }
 
-            $indicator = AssessmentIndicator::find($indicatorId);
+            $indicator = $indicators->get($indicatorId);
             if (!$indicator) continue;
 
-            $score = (float) $scoreData['score'];
+            $score = (float) $scoreData['skor'];
             $maxScore = $indicator->skor_maksimal ?? 4;
             $weight = $indicator->bobot_indikator ?? 1;
 
-            // Normalize score to percentage (0-100)
-            $normalizedScore = $maxScore > 0 ? ($score / $maxScore) * 100 : 0;
+            // Normalize score to 4-point scale
+            $normalizedScore = $maxScore > 0 ? ($score / $maxScore) * 4 : 0;
 
-            // Apply weight to normalized score
-            $weightedScore = $normalizedScore * ($weight / 100);
-
-            $totalWeightedScore += $weightedScore;
+            $totalWeightedScore += $normalizedScore * $weight;
             $totalWeight += $weight;
         }
 
-        // Return weighted average as percentage, then convert to 4-point scale
-        $averagePercentage = $totalWeight > 0 ? $totalWeightedScore / ($totalWeight / 100) : 0;
-        return round(($averagePercentage / 100) * 4, 2);
+        $this->checkMemoryUsage('calculate_score_end');
+
+        return $totalWeight > 0 ? round($totalWeightedScore / $totalWeight, 2) : 0;
     }
 
-    /**
-     * Calculate final grade based on percentage
-     */
-    protected function calculateFinalGrade(array $data = null): string
+    public function submit(): void
     {
-        $score = $this->calculateTotalScore($data);
-        $percentage = ($score / 4) * 100;
+        $data = $this->form->getState();
 
-        $grade = match (true) {
-            $percentage >= 85 => 'A',
-            $percentage >= 70 => 'B',
-            $percentage >= 55 => 'C',
-            default => 'D',
-        };
+        $this->checkMemoryUsage('submit_start');
 
-        $label = match ($grade) {
-            'A' => 'Sangat Baik',
-            'B' => 'Baik',
-            'C' => 'Cukup',
-            'D' => 'Kurang',
-        };
+        // Show initial processing notification
+        Notification::make()
+            ->title('Memproses Penilaian...')
+            ->body('Sedang menyimpan data penilaian, mohon tunggu sebentar.')
+            ->info()
+            ->duration(3000)
+            ->send();
 
-        return "{$grade} ({$label})";
+        try {
+            DB::transaction(function () use ($data) {
+                // Show validation notification
+                Notification::make()
+                    ->title('✅ Validasi Data Berhasil')
+                    ->body('Data penilaian telah divalidasi dengan baik.')
+                    ->success()
+                    ->duration(2000)
+                    ->send();
+
+                // Create school assessment record
+                $assessment = SchoolAssessment::create([
+                    'school_id' => $data['school_id'],
+                    'assessment_period_id' => $data['assessment_period_id'],
+                    'assessor_id' => Auth::id(),
+                    'tanggal_asesmen' => $data['tanggal_asesmen'],
+                    'total_score' => $this->calculateTotalScore($data['scores'] ?? []),
+                    'status' => 'submitted',
+                    'catatan' => $data['notes'] ?? '',
+                    'submitted_at' => now(),
+                ]);
+
+                // Show score saving notification
+                Notification::make()
+                    ->title('✅ Skor Indikator Tersimpan')
+                    ->body('Semua skor indikator telah berhasil disimpan.')
+                    ->success()
+                    ->duration(2000)
+                    ->send();
+
+                // Save individual scores
+                if (!empty($data['scores'])) {
+                    foreach ($data['scores'] as $indicatorId => $scoreData) {
+                        if (!empty($scoreData['skor'])) {
+                            AssessmentScore::create([
+                                'school_assessment_id' => $assessment->id,
+                                'assessment_indicator_id' => $indicatorId,
+                                'skor' => $scoreData['skor'],
+                            ]);
+                        }
+                    }
+                }
+
+                // REMOVED: File upload processing for performance optimization
+
+                Log::info('Assessment submitted successfully', [
+                    'assessment_id' => $assessment->id,
+                    'school_id' => $data['school_id'],
+                    'total_score' => $assessment->total_score
+                ]);
+            });
+
+            $this->checkMemoryUsage('submit_end');
+
+            // Show final success notification with actions
+            Notification::make()
+                ->title('🎉 Penilaian Berhasil Disimpan!')
+                ->body("Penilaian sekolah telah berhasil disimpan dengan total skor: {$this->calculateTotalScore($data['scores'] ?? [])} / 4.00")
+                ->success()
+                ->duration(7000)
+                ->actions([
+                    \Filament\Notifications\Actions\Action::make('view_report')
+                        ->label('Lihat Laporan')
+                        ->url(route('filament.admin.pages.assessment-report'))
+                        ->button(),
+                    \Filament\Notifications\Actions\Action::make('new_assessment')
+                        ->label('Penilaian Baru')
+                        ->url(route('filament.admin.pages.assessment-wizard'))
+                        ->button()
+                        ->color('gray'),
+                ])
+                ->send();
+
+            // Redirect to assessment list after delay
+            $this->redirect(route('filament.admin.resources.school-assessments.index'));
+
+        } catch (\Exception $e) {
+            Log::error('Assessment submission failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Show detailed error notification
+            Notification::make()
+                ->title('❌ Gagal Menyimpan Penilaian')
+                ->body('Terjadi kesalahan saat menyimpan penilaian: ' . $e->getMessage())
+                ->danger()
+                ->duration(10000)
+                ->actions([
+                    \Filament\Notifications\Actions\Action::make('retry')
+                        ->label('Coba Lagi')
+                        ->button()
+                        ->close(),
+                    \Filament\Notifications\Actions\Action::make('support')
+                        ->label('Hubungi Support')
+                        ->url('mailto:support@example.com')
+                        ->button()
+                        ->color('gray'),
+                ])
+                ->send();
+        }
     }
 
-    /**
-     * Get grade for database storage
-     */
-    protected function calculateGradeForDatabase(array $data = null): string
+    protected function getHeaderActions(): array
     {
-        $score = $this->calculateTotalScore($data);
-        $percentage = ($score / 4) * 100;
+        return [
+            Action::make('criteria')
+                ->label('Kriteria Penilaian')
+                ->icon('heroicon-m-clipboard-document-list')
+                ->color('warning')
+                ->modalHeading('Kriteria Penilaian Indikator')
+                ->modalContent($this->getCriteriaModalContent())
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Tutup')
+                ->modalWidth('5xl'),
 
-        return match (true) {
-            $percentage >= 85 => 'A',
-            $percentage >= 70 => 'B',
-            $percentage >= 55 => 'C',
-            default => 'D',
-        };
+            Action::make('help')
+                ->label('Bantuan')
+                ->icon('heroicon-m-question-mark-circle')
+                ->color('info')
+                ->modalHeading('Panduan Assessment Wizard')
+                ->modalContent(view('filament.components.assessment-help'))
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Tutup'),
+
+            Action::make('reset')
+                ->label('Reset Form')
+                ->icon('heroicon-m-arrow-path')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Reset Form Penilaian')
+                ->modalDescription('Apakah Anda yakin ingin mereset semua data? Tindakan ini tidak dapat dibatalkan.')
+                ->action(fn () => $this->form->fill()),
+        ];
+    }
+
+    protected function getCriteriaModalContent(): \Illuminate\Contracts\View\View
+    {
+        $categories = AssessmentCategory::with(['indicators' => function ($query) {
+            $query->orderBy('urutan_tampil');
+        }])->orderBy('urutan_tampil')->get();
+
+        return view('filament.components.assessment-criteria', [
+            'categories' => $categories
+        ]);
     }
 }
