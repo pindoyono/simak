@@ -4,22 +4,15 @@ namespace App\Filament\Resources\AssessmentPeriodResource\Pages;
 
 use App\Filament\Resources\AssessmentPeriodResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
+use Filament\Resources\Pages\ViewRecord;
 
-class EditAssessmentPeriod extends EditRecord
+class ViewAssessmentPeriod extends ViewRecord
 {
     protected static string $resource = AssessmentPeriodResource::class;
-
-    public function getTitle(): string
-    {
-        return 'Edit Periode: ' . $this->record->nama_periode;
-    }
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make()
-                ->label('Lihat'),
             Actions\Action::make('setDefault')
                 ->label('Jadikan Default')
                 ->icon('heroicon-o-star')
@@ -47,25 +40,15 @@ class EditAssessmentPeriod extends EditRecord
                     $this->refreshFormData(['status']);
                 })
                 ->successNotificationTitle('Periode berhasil diaktifkan'),
+            Actions\EditAction::make()
+                ->label('Edit'),
             Actions\DeleteAction::make()
                 ->label('Hapus'),
         ];
     }
 
-    protected function getSaveFormAction(): Actions\Action
+    public function getTitle(): string
     {
-        return parent::getSaveFormAction()
-            ->label('Simpan Perubahan');
-    }
-
-    protected function getCancelFormAction(): Actions\Action
-    {
-        return parent::getCancelFormAction()
-            ->label('Batal');
-    }
-
-    protected function getSavedNotificationTitle(): ?string
-    {
-        return 'Periode asesmen berhasil diperbarui';
+        return 'Detail Periode: ' . $this->record->nama_periode;
     }
 }
