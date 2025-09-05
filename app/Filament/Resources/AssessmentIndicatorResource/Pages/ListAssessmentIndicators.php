@@ -3,15 +3,12 @@
 namespace App\Filament\Resources\AssessmentIndicatorResource\Pages;
 
 use App\Filament\Resources\AssessmentIndicatorResource;
-use App\Imports\AssessmentIndicatorImport;
-use App\Exports\AssessmentIndicatorTemplateExport;
-use App\Exports\AssessmentIndicatorExport;
+use App\Models\AssessmentIndicator;
+use App\Models\AssessmentCategory;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Forms\Components\FileUpload;
-use Filament\Notifications\Notification;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Storage;
+use Filament\Resources\Components\Tab;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListAssessmentIndicators extends ListRecords
 {
@@ -20,74 +17,61 @@ class ListAssessmentIndicators extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('exportData')
-                ->label('Export Data')
-                ->icon('heroicon-o-document-arrow-down')
-                ->color('info')
-                ->action(function () {
-                    return Excel::download(
-                        new AssessmentIndicatorExport(),
-                        'data-assessment-indicator-' . date('Y-m-d') . '.xlsx'
-                    );
-                }),
-
-            Actions\Action::make('downloadTemplate')
-                ->label('Download Template')
-                ->icon('heroicon-o-document-arrow-down')
-                ->color('success')
-                ->action(function () {
-                    return Excel::download(
-                        new AssessmentIndicatorTemplateExport(),
-                        'template-assessment-indicator.xlsx'
-                    );
-                }),
-
-            Actions\Action::make('import')
-                ->label('Import Data')
-                ->icon('heroicon-o-document-arrow-up')
-                ->color('warning')
-                ->form([
-                    FileUpload::make('file')
-                        ->label('File Excel')
-                        ->acceptedFileTypes([
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            'application/vnd.ms-excel'
-                        ])
-                        ->required()
-                        ->disk('local')
-                        ->directory('imports')
-                        ->maxSize(5120), // 5MB
-                ])
-                ->action(function (array $data) {
-                    try {
-                        $filePath = Storage::disk('local')->path($data['file']);
-                        
-                        Excel::import(new AssessmentIndicatorImport(), $filePath);
-                        
-                        // Hapus file setelah import
-                        Storage::disk('local')->delete($data['file']);
-                        
-                        Notification::make()
-                            ->title('Import Berhasil')
-                            ->body('Data Assessment Indicator berhasil diimport.')
-                            ->success()
-                            ->send();
-                            
-                        // Refresh halaman
-                        $this->redirect(static::getUrl());
-                        
-                    } catch (\Exception $e) {
-                        Notification::make()
-                            ->title('Import Gagal')
-                            ->body('Error: ' . $e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-                }),
-
             Actions\CreateAction::make()
-                ->label('Tambah Data')
-                ->icon('heroicon-o-plus'),
+                ->label('Tambah Indikator Asesmen')
+                ->icon('heroicon-o-plus-circle')
+                ->color('success'),
+        ];
+    }
+
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('Semua Indikator')
+                ->icon('heroicon-o-list-bullet')
+                ->badge(AssessmentIndicator::count()),
+
+            'active' => Tab::make('Aktif')
+                ->icon('heroicon-o-check-circle')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', true))
+                ->badge(AssessmentIndicator::where('is_active', true)->count())
+                ->badgeColor('success'),
+
+            'inactive' => Tab::make('Tidak Aktif')
+                ->icon('heroicon-o-x-circle')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', false))
+                ->badge(AssessmentIndicator::where('is_active', false)->count())
+                ->badgeColor('danger'),
+
+            'siswa' => Tab::make('Komponen Siswa')
+                ->icon('heroicon-o-academic-cap')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('category', fn (Builder $q) => $q->where('komponen', 'SISWA')))
+                ->badge(AssessmentIndicator::whereHas('category', fn (Builder $q) => $q->where('komponen', 'SISWA'))->count())
+                ->badgeColor('blue'),
+
+            'guru' => Tab::make('Komponen Guru')
+                ->icon('heroicon-o-user-group')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('category', fn (Builder $q) => $q->where('komponen', 'GURU')))
+                ->badge(AssessmentIndicator::whereHas('category', fn (Builder $q) => $q->where('komponen', 'GURU'))->count())
+                ->badgeColor('green'),
+
+            'kinerja' => Tab::make('Kinerja Guru')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('category', fn (Builder $q) => $q->where('komponen', 'KINERJA GURU')))
+                ->badge(AssessmentIndicator::whereHas('category', fn (Builder $q) => $q->where('komponen', 'KINERJA GURU'))->count())
+                ->badgeColor('yellow'),
+
+            'kepala' => Tab::make('Kepala Sekolah')
+                ->icon('heroicon-o-building-office')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('category', fn (Builder $q) => $q->where('komponen', 'MANAGEMENT KEPALA SEKOLAH')))
+                ->badge(AssessmentIndicator::whereHas('category', fn (Builder $q) => $q->where('komponen', 'MANAGEMENT KEPALA SEKOLAH'))->count())
+                ->badgeColor('purple'),
+
+            'high_weight' => Tab::make('Bobot Tinggi (≥10%)')
+                ->icon('heroicon-o-scale')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('bobot_indikator', '>=', 10))
+                ->badge(AssessmentIndicator::where('bobot_indikator', '>=', 10)->count())
+                ->badgeColor('warning'),
         ];
     }
 }

@@ -71,7 +71,7 @@ class EditAssessmentCategory extends EditRecord
             $this->getSaveFormAction()
                 ->label('Simpan Perubahan')
                 ->icon('heroicon-s-check'),
-            
+
             $this->getCancelFormAction()
                 ->label('Batal')
                 ->icon('heroicon-s-x-mark')

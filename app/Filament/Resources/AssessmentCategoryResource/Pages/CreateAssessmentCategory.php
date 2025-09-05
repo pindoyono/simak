@@ -48,11 +48,11 @@ class CreateAssessmentCategory extends CreateRecord
             $this->getCreateFormAction()
                 ->label('Simpan Komponen')
                 ->icon('heroicon-s-check'),
-            
+
             $this->getCreateAnotherFormAction()
                 ->label('Simpan & Buat Lagi')
                 ->icon('heroicon-s-plus'),
-            
+
             $this->getCancelFormAction()
                 ->label('Batal')
                 ->icon('heroicon-s-x-mark')

@@ -422,7 +422,7 @@ class AssessmentCategoryResource extends Resource
                             $records->each(function ($record) use ($data) {
                                 $record->update(['komponen' => $data['komponen']]);
                             });
-                            
+
                             Notification::make()
                                 ->title('Berhasil!')
                                 ->body('Komponen berhasil diubah untuk ' . count($records) . ' kategori asesmen.')
