@@ -20,7 +20,7 @@ class AssessmentIndicatorResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-list-bullet';
     protected static ?string $navigationLabel = 'Assessment Indicators';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -28,9 +28,10 @@ class AssessmentIndicatorResource extends Resource
             ->schema([
                 Forms\Components\Select::make('assessment_category_id')
                     ->label('Assessment Category')
-                    ->options(AssessmentCategory::pluck('nama_kategori', 'id'))
+                    ->relationship('category', 'nama_kategori')
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
                 Forms\Components\Textarea::make('nama_indikator')
                     ->label('Nama Indikator')
                     ->required()

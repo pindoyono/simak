@@ -20,7 +20,11 @@ use App\Models\AssessmentScore;
 use App\Models\School;
 use App\Models\AssessmentPeriod;
 use App\Models\AssessmentCategory;
+use App\Exports\AssessmentReportExport;
 use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 
 class AssessmentReport extends Page implements HasTable, HasForms
 {
@@ -28,10 +32,10 @@ class AssessmentReport extends Page implements HasTable, HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
-    protected static ?string $navigationLabel = 'Laporan Penilaian';
-    protected static ?string $title = 'Laporan Penilaian';
-    protected static ?string $navigationGroup = 'Laporan';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationLabel = 'Assessment Reports';
+    protected static ?string $title = 'Assessment Reports';
+    protected static ?string $navigationGroup = 'Assessment Management';
+    protected static ?int $navigationSort = 4;
     protected static string $view = 'filament-panels::pages.dashboard';
 
     public ?array $data = [];
@@ -42,6 +46,44 @@ class AssessmentReport extends Page implements HasTable, HasForms
     public function mount(): void
     {
         $this->form->fill();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('export_excel')
+                ->label('Export Excel')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('success')
+                ->action(function () {
+                    $filters = [
+                        'school_id' => $this->selectedSchool,
+                        'period_id' => $this->selectedPeriod,
+                        'category_id' => $this->selectedCategory,
+                    ];
+
+                    $fileName = 'assessment_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+                    Notification::make()
+                        ->title('Export berhasil!')
+                        ->body('File assessment report telah diunduh.')
+                        ->success()
+                        ->send();
+
+                    return Excel::download(new AssessmentReportExport($filters), $fileName);
+                }),
+
+            Action::make('print_report')
+                ->label('Print Report')
+                ->icon('heroicon-o-printer')
+                ->color('info')
+                ->url(fn () => route('assessment.report.print', [
+                    'school_id' => $this->selectedSchool,
+                    'period_id' => $this->selectedPeriod,
+                    'category_id' => $this->selectedCategory,
+                ]))
+                ->openUrlInNewTab(),
+        ];
     }
 
     public function form(Form $form): Form

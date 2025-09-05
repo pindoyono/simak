@@ -13,13 +13,20 @@ class AssessmentReview extends Model
     protected $fillable = [
         'school_assessment_id',
         'reviewer_id',
+        'review_date',
         'status',
-        'comments',
-        'reviewed_at',
+        'grade_recommendation',
+        'strengths',
+        'weaknesses',
+        'recommendations',
+        'notes',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
-        'reviewed_at' => 'datetime',
+        'review_date' => 'date',
+        'approved_at' => 'datetime',
     ];
 
     public function schoolAssessment(): BelongsTo
@@ -32,27 +39,31 @@ class AssessmentReview extends Model
         return $this->belongsTo(User::class, 'reviewer_id');
     }
 
-    public function getStatusColorAttribute(): string
+    public function approver(): BelongsTo
     {
-        return match($this->status) {
-            'draft' => 'gray',
-            'submitted' => 'info',
-            'under_review' => 'warning',
-            'approved' => 'success',
-            'rejected' => 'danger',
-            default => 'gray',
-        };
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
-            'draft' => 'Draft',
-            'submitted' => 'Submitted',
-            'under_review' => 'Under Review',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            default => 'Unknown',
+            'pending' => 'Menunggu Review',
+            'in_progress' => 'Sedang Direview',
+            'approved' => 'Disetujui',
+            'rejected' => 'Ditolak',
+            'revision_needed' => 'Perlu Revisi',
+            default => 'Unknown'
+        };
+    }
+
+    public function getGradeLabelAttribute(): string
+    {
+        return match($this->grade_recommendation) {
+            'A' => 'A - Sangat Baik (≥85%)',
+            'B' => 'B - Baik (70-84%)',
+            'C' => 'C - Cukup (55-69%)',
+            'D' => 'D - Kurang (<55%)',
+            default => 'Belum Ditentukan'
         };
     }
 }

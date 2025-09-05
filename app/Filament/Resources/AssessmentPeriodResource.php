@@ -19,7 +19,7 @@ class AssessmentPeriodResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?string $navigationLabel = 'Assessment Periods';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

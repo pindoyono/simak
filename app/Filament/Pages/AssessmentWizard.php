@@ -370,30 +370,6 @@ class AssessmentWizard extends Page implements HasForms
         return $school ? $school->nama_sekolah : 'School not found';
     }
 
-    protected function calculateFinalGrade(array $data = null): string
-    {
-        $score = $this->calculateTotalScore($data);
-
-        return match (true) {
-            $score >= 3.5 => 'A (Sangat Baik)',
-            $score >= 2.5 => 'B (Baik)',
-            $score >= 1.5 => 'C (Cukup Baik)',
-            default => 'D (Kurang)',
-        };
-    }
-
-    protected function calculateGradeForDatabase(array $data = null): string
-    {
-        $score = $this->calculateTotalScore($data);
-
-        return match (true) {
-            $score >= 3.5 => 'A',
-            $score >= 2.5 => 'B',
-            $score >= 1.5 => 'C',
-            default => 'D',
-        };
-    }
-
     public function getSteps(): array
     {
         return [
@@ -478,7 +454,7 @@ class AssessmentWizard extends Page implements HasForms
     }
 
     /**
-     * Calculate total score with flexible scoring system
+     * Calculate weighted average score with enhanced algorithm
      */
     protected function calculateTotalScore(array $data = null): float
     {
@@ -488,24 +464,74 @@ class AssessmentWizard extends Page implements HasForms
             return 0;
         }
 
-        $weightedTotal = 0;
+        $totalWeightedScore = 0;
         $totalWeight = 0;
 
         foreach ($scores as $indicatorId => $scoreData) {
-            if (isset($scoreData['score']) && is_numeric($scoreData['score'])) {
-                $indicator = AssessmentIndicator::find($indicatorId);
-                $score = (float) $scoreData['score'];
-                $weight = $indicator->bobot_indikator ?? 1;
-                $maxScore = $indicator->skor_maksimal ?? 4;
-
-                // Normalize score to 0-1 scale, then multiply by weight
-                $normalizedScore = $score / $maxScore;
-                $weightedTotal += $normalizedScore * $weight;
-                $totalWeight += $weight;
+            if (!isset($scoreData['score']) || !is_numeric($scoreData['score'])) {
+                continue;
             }
+
+            $indicator = AssessmentIndicator::find($indicatorId);
+            if (!$indicator) continue;
+
+            $score = (float) $scoreData['score'];
+            $maxScore = $indicator->skor_maksimal ?? 4;
+            $weight = $indicator->bobot_indikator ?? 1;
+
+            // Normalize score to percentage (0-100)
+            $normalizedScore = $maxScore > 0 ? ($score / $maxScore) * 100 : 0;
+
+            // Apply weight to normalized score
+            $weightedScore = $normalizedScore * ($weight / 100);
+
+            $totalWeightedScore += $weightedScore;
+            $totalWeight += $weight;
         }
 
-        // Return weighted average on 4-point scale
-        return $totalWeight > 0 ? round(($weightedTotal / $totalWeight) * 4, 2) : 0;
+        // Return weighted average as percentage, then convert to 4-point scale
+        $averagePercentage = $totalWeight > 0 ? $totalWeightedScore / ($totalWeight / 100) : 0;
+        return round(($averagePercentage / 100) * 4, 2);
+    }
+
+    /**
+     * Calculate final grade based on percentage
+     */
+    protected function calculateFinalGrade(array $data = null): string
+    {
+        $score = $this->calculateTotalScore($data);
+        $percentage = ($score / 4) * 100;
+
+        $grade = match (true) {
+            $percentage >= 85 => 'A',
+            $percentage >= 70 => 'B',
+            $percentage >= 55 => 'C',
+            default => 'D',
+        };
+
+        $label = match ($grade) {
+            'A' => 'Sangat Baik',
+            'B' => 'Baik',
+            'C' => 'Cukup',
+            'D' => 'Kurang',
+        };
+
+        return "{$grade} ({$label})";
+    }
+
+    /**
+     * Get grade for database storage
+     */
+    protected function calculateGradeForDatabase(array $data = null): string
+    {
+        $score = $this->calculateTotalScore($data);
+        $percentage = ($score / 4) * 100;
+
+        return match (true) {
+            $percentage >= 85 => 'A',
+            $percentage >= 70 => 'B',
+            $percentage >= 55 => 'C',
+            default => 'D',
+        };
     }
 }

@@ -21,15 +21,15 @@ class AssessmentScoreResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static ?string $navigationLabel = 'Skor Penilaian';
+    protected static ?string $navigationLabel = 'Assessment Scores';
 
-    protected static ?string $modelLabel = 'Skor Penilaian';
+    protected static ?string $modelLabel = 'Assessment Score';
 
-    protected static ?string $pluralModelLabel = 'Skor Penilaian';
+    protected static ?string $pluralModelLabel = 'Assessment Scores';
 
-    protected static ?string $navigationGroup = 'Data Penilaian';
+    protected static ?string $navigationGroup = 'Assessment Management';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
