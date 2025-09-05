@@ -14,8 +14,10 @@ class EditAssessor extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
+            Actions\ViewAction::make()
+                ->label('Lihat'),
+            Actions\DeleteAction::make()
+                ->label('Hapus'),
         ];
     }
 
@@ -28,7 +30,7 @@ class EditAssessor extends EditRecord
     {
         return Notification::make()
             ->success()
-            ->title('Assessor berhasil diperbarui')
-            ->body('Perubahan data assessor telah berhasil disimpan.');
+            ->title('Asesor berhasil diperbarui')
+            ->body('Perubahan data asesor telah berhasil disimpan.');
     }
 }

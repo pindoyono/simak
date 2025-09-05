@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -21,7 +23,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        'email_verified_at',
+        'is_active',
+        'last_login_at',
     ];
 
     /**
@@ -44,6 +50,52 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    // Relationships
+    public function assessor(): HasOne
+    {
+        return $this->hasOne(Assessor::class);
+    }
+
+    public function assessmentReviews(): HasMany
+    {
+        return $this->hasMany(AssessmentReview::class, 'reviewer_id');
+    }
+
+    // Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeVerified($query)
+    {
+        return $query->whereNotNull('email_verified_at');
+    }
+
+    public function scopeAssessors($query)
+    {
+        return $query->whereHas('assessor');
+    }
+
+    // Accessors
+    public function getIsAssessorAttribute(): bool
+    {
+        return $this->assessor()->exists();
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return $this->is_active ? 'Aktif' : 'Tidak Aktif';
+    }
+
+    public function getFullInfoAttribute(): string
+    {
+        $roles = $this->roles->pluck('name')->join(', ');
+        return "{$this->name} ({$this->email})" . ($roles ? " - {$roles}" : '');
     }
 }

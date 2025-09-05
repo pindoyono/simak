@@ -18,22 +18,22 @@ class AssessorResource extends Resource
 {
     protected static ?string $model = Assessor::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationLabel = 'Assessors';
-    protected static ?string $modelLabel = 'Assessor';
-    protected static ?string $pluralModelLabel = 'Assessors';
-    protected static ?string $navigationGroup = 'User Management';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationLabel = 'Asesor';
+    protected static ?string $modelLabel = 'Asesor';
+    protected static ?string $pluralModelLabel = 'Asesor';
+    protected static ?string $navigationGroup = 'Manajemen Pengguna';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi User')
-                    ->description('Pilih user yang akan dijadikan assessor')
+                Forms\Components\Section::make('Informasi Pengguna')
+                    ->description('Pilih pengguna yang akan dijadikan asesor')
                     ->schema([
                         Forms\Components\Select::make('user_id')
-                            ->label('User')
+                            ->label('Pengguna')
                             ->relationship('user', 'name')
                             ->required()
                             ->searchable()
@@ -56,12 +56,12 @@ class AssessorResource extends Resource
                                     ->minLength(8)
                                     ->dehydrateStateUsing(fn ($state) => bcrypt($state)),
                             ])
-                            ->placeholder('Pilih user existing atau buat baru'),
+                            ->placeholder('Pilih pengguna yang ada atau buat baru'),
                     ])
                     ->columns(1),
 
-                Forms\Components\Section::make('Data Assessor')
-                    ->description('Informasi detail assessor')
+                Forms\Components\Section::make('Data Asesor')
+                    ->description('Informasi detail asesor')
                     ->schema([
                         Forms\Components\TextInput::make('nomor_identitas')
                             ->label('NIP/Nomor Identitas')
@@ -112,13 +112,13 @@ class AssessorResource extends Resource
                     ->schema([
                         Forms\Components\RichEditor::make('catatan')
                             ->label('Catatan')
-                            ->placeholder('Catatan tambahan tentang assessor')
+                            ->placeholder('Catatan tambahan tentang asesor')
                             ->columnSpanFull(),
 
                         Forms\Components\Toggle::make('is_active')
                             ->label('Status Aktif')
                             ->default(true)
-                            ->helperText('Assessor aktif dapat melakukan penilaian'),
+                            ->helperText('Asesor aktif dapat melakukan penilaian'),
                     ])
                     ->columns(1),
             ]);
@@ -129,7 +129,7 @@ class AssessorResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('User Account')
+                    ->label('Akun Pengguna')
                     ->searchable()
                     ->sortable()
                     ->badge()
@@ -140,7 +140,7 @@ class AssessorResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->copyMessage('NIP copied!')
+                    ->copyMessage('NIP disalin!')
                     ->copyMessageDuration(1500)
                     ->placeholder('Belum diisi'),
 
@@ -244,15 +244,19 @@ class AssessorResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat'),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit'),
                 Tables\Actions\DeleteAction::make()
+                    ->label('Hapus')
                     ->requiresConfirmation()
-                    ->modalDescription('Apakah Anda yakin ingin menghapus assessor ini?'),
+                    ->modalDescription('Apakah Anda yakin ingin menghapus asesor ini?'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
+                        ->label('Hapus Terpilih')
                         ->requiresConfirmation(),
 
                     Tables\Actions\BulkAction::make('activate')
@@ -263,7 +267,7 @@ class AssessorResource extends Resource
                             $records->each(fn ($record) => $record->update(['is_active' => true]));
                         })
                         ->requiresConfirmation()
-                        ->modalDescription('Aktifkan assessor yang dipilih?'),
+                        ->modalDescription('Aktifkan asesor yang dipilih?'),
 
                     Tables\Actions\BulkAction::make('deactivate')
                         ->label('Nonaktifkan')
@@ -273,7 +277,7 @@ class AssessorResource extends Resource
                             $records->each(fn ($record) => $record->update(['is_active' => false]));
                         })
                         ->requiresConfirmation()
-                        ->modalDescription('Nonaktifkan assessor yang dipilih?'),
+                        ->modalDescription('Nonaktifkan asesor yang dipilih?'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

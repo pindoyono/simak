@@ -18,8 +18,10 @@ class ViewAssessor extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
-            Actions\DeleteAction::make(),
+            Actions\EditAction::make()
+                ->label('Edit'),
+            Actions\DeleteAction::make()
+                ->label('Hapus'),
         ];
     }
 
@@ -27,9 +29,9 @@ class ViewAssessor extends ViewRecord
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Assessor')
+                Section::make('Informasi Asesor')
                     ->icon('heroicon-o-user')
-                    ->description('Detail informasi assessor dan status.')
+                    ->description('Detail informasi asesor dan status.')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('user.name')
@@ -77,7 +79,7 @@ class ViewAssessor extends ViewRecord
 
                 Section::make('Sertifikasi & Keahlian')
                     ->icon('heroicon-o-document-check')
-                    ->description('Informasi sertifikasi dan bidang keahlian assessor.')
+                    ->description('Informasi sertifikasi dan bidang keahlian asesor.')
                     ->columns(1)
                     ->schema([
                         TextEntry::make('sertifikasi')
@@ -93,7 +95,7 @@ class ViewAssessor extends ViewRecord
 
                 Section::make('Catatan')
                     ->icon('heroicon-o-chat-bubble-left-ellipsis')
-                    ->description('Catatan tambahan tentang assessor.')
+                    ->description('Catatan tambahan tentang asesor.')
                     ->columns(1)
                     ->schema([
                         TextEntry::make('catatan')

@@ -16,7 +16,7 @@ class ListAssessors extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Tambah Assessor')
+                ->label('Tambah Asesor')
                 ->icon('heroicon-o-plus'),
         ];
     }

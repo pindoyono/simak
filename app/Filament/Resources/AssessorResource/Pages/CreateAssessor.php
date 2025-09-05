@@ -20,8 +20,8 @@ class CreateAssessor extends CreateRecord
     {
         return Notification::make()
             ->success()
-            ->title('Assessor berhasil dibuat')
-            ->body('Data assessor telah berhasil disimpan ke sistem.');
+            ->title('Asesor berhasil dibuat')
+            ->body('Data asesor telah berhasil disimpan ke sistem.');
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
