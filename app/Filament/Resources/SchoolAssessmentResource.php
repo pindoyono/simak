@@ -52,7 +52,7 @@ class SchoolAssessmentResource extends Resource
 
                                 Forms\Components\Select::make('assessment_period_id')
                                     ->label('Periode Penilaian')
-                                    ->relationship('assessmentPeriod', 'nama_periode')
+                                    ->relationship('period', 'nama_periode')
                                     ->required()
                                     ->searchable()
                                     ->preload(),
@@ -70,34 +70,30 @@ class SchoolAssessmentResource extends Resource
                                     ->default(now()),
                             ]),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('total_skor')
+                                Forms\Components\TextInput::make('total_score')
                                     ->label('Total Skor')
                                     ->numeric()
-                                    ->readOnly(),
+                                    ->step(0.01),
 
-                                Forms\Components\TextInput::make('skor_maksimal')
-                                    ->label('Skor Maksimal')
-                                    ->numeric()
-                                    ->readOnly(),
-
-                                Forms\Components\TextInput::make('persentase_skor')
-                                    ->label('Persentase (%)')
-                                    ->numeric()
-                                    ->readOnly()
-                                    ->suffix('%'),
+                                Forms\Components\Select::make('grade')
+                                    ->label('Grade')
+                                    ->options([
+                                        'A' => 'A - Sangat Baik',
+                                        'B' => 'B - Baik',
+                                        'C' => 'C - Cukup',
+                                        'D' => 'D - Kurang',
+                                    ]),
                             ]),
 
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
                                 'draft' => 'Draft',
-                                'in_progress' => 'Sedang Dikerjakan',
-                                'completed' => 'Selesai',
-                                'reviewed' => 'Sudah Direview',
-                                'approved' => 'Disetujui',
-                                'rejected' => 'Ditolak',
+                                'submitted' => 'Submitted',
+                                'reviewed' => 'Reviewed',
+                                'approved' => 'Approved',
                             ])
                             ->required()
                             ->default('draft'),
@@ -122,7 +118,7 @@ class SchoolAssessmentResource extends Resource
                     ->sortable()
                     ->weight(FontWeight::Medium),
 
-                Tables\Columns\TextColumn::make('assessmentPeriod.nama_periode')
+                Tables\Columns\TextColumn::make('period.nama_periode')
                     ->label('Periode')
                     ->searchable()
                     ->sortable(),
@@ -137,41 +133,38 @@ class SchoolAssessmentResource extends Resource
                     ->date('d M Y')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('total_skor')
+                Tables\Columns\TextColumn::make('total_score')
                     ->label('Skor')
-                    ->numeric()
+                    ->numeric(2)
                     ->sortable()
                     ->alignCenter(),
 
-                Tables\Columns\TextColumn::make('persentase_skor')
-                    ->label('Persentase')
-                    ->formatStateUsing(fn ($state) => number_format($state, 1) . '%')
+                Tables\Columns\TextColumn::make('grade')
+                    ->label('Grade')
                     ->sortable()
                     ->alignCenter()
-                    ->color(fn ($state) => match (true) {
-                        $state >= 90 => 'success',
-                        $state >= 75 => 'warning',
-                        $state >= 60 => 'info',
-                        default => 'danger',
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'A' => 'success',
+                        'B' => 'info',
+                        'C' => 'warning',
+                        'D' => 'danger',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->colors([
                         'secondary' => 'draft',
-                        'warning' => 'in_progress',
-                        'primary' => 'completed',
-                        'info' => 'reviewed',
+                        'info' => 'submitted',
+                        'warning' => 'reviewed',
                         'success' => 'approved',
-                        'danger' => 'rejected',
                     ])
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'draft' => 'Draft',
-                        'in_progress' => 'Dikerjakan',
-                        'completed' => 'Selesai',
-                        'reviewed' => 'Direview',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'submitted' => 'Submitted',
+                        'reviewed' => 'Reviewed',
+                        'approved' => 'Approved',
                         default => $state,
                     }),
 
@@ -196,7 +189,7 @@ class SchoolAssessmentResource extends Resource
 
                 Tables\Filters\SelectFilter::make('assessment_period_id')
                     ->label('Periode')
-                    ->relationship('assessmentPeriod', 'nama_periode')
+                    ->relationship('period', 'nama_periode')
                     ->searchable()
                     ->preload(),
 
@@ -204,11 +197,9 @@ class SchoolAssessmentResource extends Resource
                     ->label('Status')
                     ->options([
                         'draft' => 'Draft',
-                        'in_progress' => 'Sedang Dikerjakan',
-                        'completed' => 'Selesai',
-                        'reviewed' => 'Sudah Direview',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'submitted' => 'Submitted',
+                        'reviewed' => 'Reviewed',
+                        'approved' => 'Approved',
                     ]),
 
                 Tables\Filters\Filter::make('tanggal_asesmen')
@@ -256,7 +247,7 @@ class SchoolAssessmentResource extends Resource
                                 Infolists\Components\TextEntry::make('school.nama_sekolah')
                                     ->label('Sekolah'),
 
-                                Infolists\Components\TextEntry::make('assessmentPeriod.nama_periode')
+                                Infolists\Components\TextEntry::make('period.nama_periode')
                                     ->label('Periode Penilaian'),
 
                                 Infolists\Components\TextEntry::make('assessor.name')
@@ -270,24 +261,21 @@ class SchoolAssessmentResource extends Resource
 
                 Infolists\Components\Section::make('Hasil Penilaian')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Infolists\Components\Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('total_skor')
+                                Infolists\Components\TextEntry::make('total_score')
                                     ->label('Total Skor')
-                                    ->numeric(),
+                                    ->numeric(2),
 
-                                Infolists\Components\TextEntry::make('skor_maksimal')
-                                    ->label('Skor Maksimal')
-                                    ->numeric(),
-
-                                Infolists\Components\TextEntry::make('persentase_skor')
-                                    ->label('Persentase')
-                                    ->formatStateUsing(fn ($state) => number_format($state, 1) . '%')
-                                    ->color(fn ($state) => match (true) {
-                                        $state >= 90 => 'success',
-                                        $state >= 75 => 'warning',
-                                        $state >= 60 => 'info',
-                                        default => 'danger',
+                                Infolists\Components\TextEntry::make('grade')
+                                    ->label('Grade')
+                                    ->badge()
+                                    ->color(fn ($state) => match ($state) {
+                                        'A' => 'success',
+                                        'B' => 'info',
+                                        'C' => 'warning',
+                                        'D' => 'danger',
+                                        default => 'gray',
                                     }),
                             ]),
                     ]),
@@ -299,20 +287,16 @@ class SchoolAssessmentResource extends Resource
                             ->badge()
                             ->color(fn ($state) => match ($state) {
                                 'draft' => 'secondary',
-                                'in_progress' => 'warning',
-                                'completed' => 'primary',
-                                'reviewed' => 'info',
+                                'submitted' => 'info',
+                                'reviewed' => 'warning',
                                 'approved' => 'success',
-                                'rejected' => 'danger',
                                 default => 'secondary',
                             })
                             ->formatStateUsing(fn ($state) => match ($state) {
                                 'draft' => 'Draft',
-                                'in_progress' => 'Sedang Dikerjakan',
-                                'completed' => 'Selesai',
-                                'reviewed' => 'Sudah Direview',
-                                'approved' => 'Disetujui',
-                                'rejected' => 'Ditolak',
+                                'submitted' => 'Submitted',
+                                'reviewed' => 'Reviewed',
+                                'approved' => 'Approved',
                                 default => $state,
                             }),
 

@@ -46,7 +46,7 @@ class SchoolAssessment extends Model
 
     public function assessor(): BelongsTo
     {
-        return $this->belongsTo(Assessor::class);
+        return $this->belongsTo(\App\Models\User::class, 'assessor_id');
     }
 
     public function scores(): HasMany
