@@ -13,7 +13,7 @@ class ListSchoolAssessments extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Create action removed - assessments should only be created via Assessment Wizard
         ];
     }
 }
