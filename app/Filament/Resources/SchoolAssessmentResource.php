@@ -236,6 +236,11 @@ class SchoolAssessmentResource extends Resource
             ->poll('30s');
     }
 
+    public static function canCreate(): bool
+    {
+        return false; // Disable create - assessments should only be created via Assessment Wizard
+    }
+
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
@@ -318,7 +323,6 @@ class SchoolAssessmentResource extends Resource
     {
         return [
             'index' => Pages\ListSchoolAssessments::route('/'),
-            'create' => Pages\CreateSchoolAssessment::route('/create'),
             'view' => Pages\ViewSchoolAssessment::route('/{record}'),
             'edit' => Pages\EditSchoolAssessment::route('/{record}/edit'),
         ];
