@@ -25,7 +25,7 @@ class QuickActionsWidget extends Widget
                 return $q->where('assessment_period_id', $currentPeriod->id);
             })->count();
 
-        $schoolsWithoutAssessment = School::whereDoesntHave('schoolAssessments', function($q) use ($currentPeriod) {
+        $schoolsWithoutAssessment = School::whereDoesntHave('assessments', function($q) use ($currentPeriod) {
             if ($currentPeriod) {
                 $q->where('assessment_period_id', $currentPeriod->id);
             }

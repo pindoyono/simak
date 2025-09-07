@@ -66,6 +66,11 @@ class User extends Authenticatable
         return $this->hasMany(AssessmentReview::class, 'reviewer_id');
     }
 
+    public function schoolAssessments(): HasMany
+    {
+        return $this->hasMany(SchoolAssessment::class, 'assessor_id');
+    }
+
     // Scopes
     public function scopeActive($query)
     {

@@ -59,13 +59,13 @@ class SchoolPerformanceWidget extends Widget
 
         // Assessment progress by school status
         $progressByStatus = School::select('status')
-            ->withCount(['schoolAssessments as completed_count' => function($q) use ($currentPeriod) {
+            ->withCount(['assessments as completed_count' => function($q) use ($currentPeriod) {
                 $q->where('status', 'approved');
                 if ($currentPeriod) {
                     $q->where('assessment_period_id', $currentPeriod->id);
                 }
             }])
-            ->withCount(['schoolAssessments as total_count' => function($q) use ($currentPeriod) {
+            ->withCount(['assessments as total_count' => function($q) use ($currentPeriod) {
                 if ($currentPeriod) {
                     $q->where('assessment_period_id', $currentPeriod->id);
                 }

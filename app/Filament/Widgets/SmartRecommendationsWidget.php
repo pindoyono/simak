@@ -335,7 +335,7 @@ class SmartRecommendationsWidget extends Widget
 
         foreach ($categories as $category) {
             $avgScore = SchoolAssessment::whereHas('scores', function($query) use ($category) {
-                $query->whereHas('indicator', function($indicatorQuery) use ($category) {
+                $query->whereHas('assessmentIndicator', function($indicatorQuery) use ($category) {
                     $indicatorQuery->where('assessment_category_id', $category->id);
                 });
             })->avg('total_score') ?? 0;
@@ -346,7 +346,7 @@ class SmartRecommendationsWidget extends Widget
                     'name' => $category->name,
                     'avg_score' => round($avgScore, 1),
                     'affected_schools' => School::whereHas('assessments.scores', function($query) use ($category) {
-                        $query->whereHas('indicator', function($indicatorQuery) use ($category) {
+                        $query->whereHas('assessmentIndicator', function($indicatorQuery) use ($category) {
                             $indicatorQuery->where('assessment_category_id', $category->id);
                         });
                     })->count(),
