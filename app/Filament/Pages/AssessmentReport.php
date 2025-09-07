@@ -35,7 +35,7 @@ class AssessmentReport extends Page implements HasForms, HasTable
     protected static ?string $navigationLabel = 'Laporan Penilaian';
     protected static ?string $navigationGroup = 'Penilaian';
     protected static ?int $navigationSort = 4;
-    
+
     // Hide from navigation to prevent duplicates with AssessmentReportResource
     protected static bool $shouldRegisterNavigation = false;
 

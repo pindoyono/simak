@@ -17,7 +17,6 @@ use Filament\Infolists\Infolist;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Enums\FiltersLayout;
 
 class SchoolAssessmentResource extends Resource
 {
@@ -184,14 +183,12 @@ class SchoolAssessmentResource extends Resource
                 Tables\Filters\SelectFilter::make('school_id')
                     ->label('Sekolah')
                     ->relationship('school', 'nama_sekolah')
-                    ->searchable()
-                    ->preload(),
+                    ->searchable(),
 
                 Tables\Filters\SelectFilter::make('assessment_period_id')
                     ->label('Periode')
                     ->relationship('period', 'nama_periode')
-                    ->searchable()
-                    ->preload(),
+                    ->searchable(),
 
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
@@ -201,27 +198,7 @@ class SchoolAssessmentResource extends Resource
                         'reviewed' => 'Reviewed',
                         'approved' => 'Approved',
                     ]),
-
-                Tables\Filters\Filter::make('tanggal_asesmen')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('Dari Tanggal'),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('Sampai Tanggal'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal_asesmen', '>=', $date),
-                            )
-                            ->when(
-                                $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal_asesmen', '<=', $date),
-                            );
-                    }),
-            ], layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(3)
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
