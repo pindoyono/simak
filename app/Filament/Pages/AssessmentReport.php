@@ -35,6 +35,9 @@ class AssessmentReport extends Page implements HasForms, HasTable
     protected static ?string $navigationLabel = 'Laporan Penilaian';
     protected static ?string $navigationGroup = 'Penilaian';
     protected static ?int $navigationSort = 4;
+    
+    // Hide from navigation to prevent duplicates with AssessmentReportResource
+    protected static bool $shouldRegisterNavigation = false;
 
     public ?array $data = [];
 
@@ -132,27 +135,15 @@ class AssessmentReport extends Page implements HasForms, HasTable
             ->filters([
                 SelectFilter::make('assessment_period_id')
                     ->label('Periode')
-                    ->options(
-                        \App\Models\AssessmentPeriod::query()
-                            ->pluck('nama_periode', 'id')
-                            ->toArray()
-                    ),
+                    ->relationship('schoolAssessment.period', 'nama_periode'),
 
                 SelectFilter::make('assessment_category_id')
                     ->label('Kategori')
-                    ->options(
-                        \App\Models\AssessmentCategory::query()
-                            ->pluck('nama_kategori', 'id')
-                            ->toArray()
-                    ),
+                    ->relationship('assessmentIndicator.category', 'nama_kategori'),
 
                 SelectFilter::make('school_id')
                     ->label('Sekolah')
-                    ->options(
-                        \App\Models\School::query()
-                            ->pluck('nama_sekolah', 'id')
-                            ->toArray()
-                    ),
+                    ->relationship('schoolAssessment.school', 'nama_sekolah'),
             ])
             ->modifyQueryUsing(function (Builder $query) {
                 $data = $this->data;

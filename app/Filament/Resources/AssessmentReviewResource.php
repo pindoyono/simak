@@ -20,9 +20,9 @@ class AssessmentReviewResource extends Resource
     protected static ?string $model = AssessmentReview::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
-    protected static ?string $navigationLabel = 'Assessment Reviews';
-    protected static ?string $navigationGroup = 'Assessment Management';
-    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationLabel = 'Review Penilaian';
+    protected static ?string $navigationGroup = 'Penilaian';
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

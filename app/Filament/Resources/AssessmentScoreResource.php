@@ -38,9 +38,9 @@ class AssessmentScoreResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Skor Penilaian';
 
-    protected static ?string $navigationGroup = 'Manajemen Penilaian';
+    protected static ?string $navigationGroup = 'Penilaian';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
