@@ -44,15 +44,22 @@ class PredictiveAnalyticsWidget extends Widget
             ->whereHas('period', function($query) {
                 $query->where('end_date', '<', now());
             })
-            ->selectRaw('
-                school_id,
-                AVG(total_score) as avg_score,
-                COUNT(*) as assessment_count,
-                STDDEV(total_score) as score_variance
-            ')
+            ->select('school_id', 'total_score')
+            ->get()
             ->groupBy('school_id')
-            ->having('assessment_count', '>=', 2)
-            ->get();
+            ->map(function ($assessments, $schoolId) {
+                $scores = $assessments->pluck('total_score');
+                if ($scores->count() < 2) return null;
+                
+                return (object) [
+                    'school_id' => $schoolId,
+                    'avg_score' => $scores->avg(),
+                    'assessment_count' => $scores->count(),
+                    'score_variance' => $this->calculateVariance($scores->toArray()),
+                ];
+            })
+            ->filter()
+            ->values();
 
         $predictions = [];
         foreach ($historical as $data) {
@@ -375,6 +382,18 @@ class PredictiveAnalyticsWidget extends Widget
             'improving_region' => 'Surabaya',
             'needs_attention' => 'Rural Areas',
         ];
+    }
+
+    protected function calculateVariance(array $values): float
+    {
+        if (count($values) < 2) return 0;
+        
+        $mean = array_sum($values) / count($values);
+        $variance = array_sum(array_map(function($x) use ($mean) {
+            return pow($x - $mean, 2);
+        }, $values)) / (count($values) - 1);
+        
+        return sqrt($variance); // Return standard deviation
     }
 
     protected function getFilters(): ?array

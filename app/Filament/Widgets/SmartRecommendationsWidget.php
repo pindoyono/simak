@@ -415,14 +415,14 @@ class SmartRecommendationsWidget extends Widget
 
     protected function analyzeRegionalPerformance(): array
     {
-        $regions = School::distinct('region')->pluck('region')->filter();
+        $regions = School::distinct('provinsi')->pluck('provinsi')->filter();
         if ($regions->count() < 2) {
             return ['has_disparities' => false];
         }
 
         $regionalScores = [];
         foreach ($regions as $region) {
-            $avgScore = School::where('region', $region)
+            $avgScore = School::where('provinsi', $region)
                 ->whereHas('assessments')
                 ->with('assessments')
                 ->get()
@@ -493,8 +493,8 @@ class SmartRecommendationsWidget extends Widget
 
     protected function findSimilarSchools(School $school): int
     {
-        return School::where('type', $school->type)
-                   ->where('region', $school->region)
+        return School::where('jenjang', $school->jenjang)
+                   ->where('provinsi', $school->provinsi)
                    ->where('id', '!=', $school->id)
                    ->count();
     }

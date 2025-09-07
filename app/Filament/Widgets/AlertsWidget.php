@@ -15,15 +15,33 @@ class AlertsWidget extends Widget
     protected int | string | array $columnSpan = 'full';
     protected static ?string $pollingInterval = '60s';
 
+    public function getColumnSpan(): int | string | array
+    {
+        $alerts = $this->generateAlerts();
+        
+        // If no alerts, use smaller space
+        if ($alerts->isEmpty()) {
+            return [
+                'md' => 2,
+                'xl' => 3,
+            ];
+        }
+        
+        return 'full';
+    }
+
     public function getViewData(): array
     {
         $alerts = $this->generateAlerts();
+        $currentPeriod = AssessmentPeriod::where('is_default', true)->first();
 
         return [
             'alerts' => $alerts,
             'hasUrgent' => $alerts->where('type', 'urgent')->isNotEmpty(),
             'hasWarning' => $alerts->where('type', 'warning')->isNotEmpty(),
             'totalAlerts' => $alerts->count(),
+            'hasAssessmentPeriod' => !is_null($currentPeriod),
+            'currentPeriod' => $currentPeriod,
         ];
     }
 

@@ -36,7 +36,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets') // Disabled to manually control widget visibility
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Widgets\SmartStatsOverview::class,
@@ -46,10 +46,11 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\TrendsWidget::class,
                 \App\Filament\Widgets\SchoolPerformanceWidget::class,
                 \App\Filament\Widgets\SystemHealthWidget::class,
-                \App\Filament\Widgets\PredictiveAnalyticsWidget::class,
-                \App\Filament\Widgets\SmartRecommendationsWidget::class,
-                \App\Filament\Widgets\AnomalyDetectionWidget::class,
-                \App\Filament\Widgets\IntelligentInsightsWidget::class,
+                // Hidden AI-powered widgets (Phase 3)
+                // \App\Filament\Widgets\PredictiveAnalyticsWidget::class,
+                // \App\Filament\Widgets\SmartRecommendationsWidget::class,
+                // \App\Filament\Widgets\AnomalyDetectionWidget::class,
+                // \App\Filament\Widgets\IntelligentInsightsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

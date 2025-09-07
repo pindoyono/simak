@@ -335,8 +335,13 @@ class IntelligentInsightsWidget extends Widget
     protected function calculateSystemEfficiency(): array
     {
         $assessments = SchoolAssessment::whereNotNull('completed_at')
-            ->selectRaw('TIMESTAMPDIFF(DAY, created_at, completed_at) as completion_days')
-            ->get();
+            ->get()
+            ->map(function ($assessment) {
+                $created = \Carbon\Carbon::parse($assessment->created_at);
+                $completed = \Carbon\Carbon::parse($assessment->completed_at);
+                $assessment->completion_days = $created->diffInDays($completed);
+                return $assessment;
+            });
 
         $avgDays = $assessments->avg('completion_days') ?? 0;
         $onTime = $assessments->filter(fn($a) => $a->completion_days <= 14)->count();
@@ -357,14 +362,14 @@ class IntelligentInsightsWidget extends Widget
 
     protected function analyzeRegionalPerformance(): array
     {
-        $regions = School::distinct('region')->pluck('region')->filter();
+        $regions = School::distinct('provinsi')->pluck('provinsi')->filter();
         if ($regions->count() < 2) {
             return ['has_significant_variations' => false];
         }
 
         $regionalScores = [];
         foreach ($regions as $region) {
-            $avgScore = School::where('region', $region)
+            $avgScore = School::where('provinsi', $region)
                 ->whereHas('assessments')
                 ->with('assessments')
                 ->get()

@@ -5,7 +5,8 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <x-heroicon-o-bell class="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3
+                        class="{{ !$hasAssessmentPeriod && $totalAlerts === 0 ? 'text-base' : 'text-lg' }} font-semibold text-gray-900 dark:text-white">
                         System Alerts
                     </h3>
                     @if ($totalAlerts > 0)
@@ -20,9 +21,11 @@
                         </span>
                     @endif
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                    Last updated: {{ now()->format('H:i') }}
-                </div>
+                @if ($totalAlerts > 0 || $hasAssessmentPeriod)
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Last updated: {{ now()->format('H:i') }}
+                    </div>
+                @endif
             </div>
 
             {{-- Alerts List --}}
@@ -107,13 +110,13 @@
                     @endforeach
                 </div>
             @else
-                {{-- No Alerts State --}}
-                <div class="text-center py-8">
-                    <div class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500">
-                        <x-heroicon-o-check-circle class="h-12 w-12" />
+                {{-- No Alerts State - Simple and Clean --}}
+                <div class="text-center py-6">
+                    <div class="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500">
+                        <x-heroicon-o-check-circle class="h-10 w-10" />
                     </div>
-                    <h3 class="mt-4 text-sm font-medium text-gray-900 dark:text-white">All Clear!</h3>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <h3 class="mt-3 text-sm font-medium text-gray-900 dark:text-white">All Clear!</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         No urgent alerts at the moment. Keep up the good work!
                     </p>
                 </div>

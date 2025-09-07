@@ -198,12 +198,14 @@ class AnomalyDetectionWidget extends Widget
 
         // Assessments taking unusually long
         $assessmentDurations = SchoolAssessment::whereNotNull('completed_at')
-            ->selectRaw('
-                *,
-                TIMESTAMPDIFF(DAY, created_at, completed_at) as duration_days
-            ')
             ->with('school')
-            ->get();
+            ->get()
+            ->map(function ($assessment) {
+                $created = \Carbon\Carbon::parse($assessment->created_at);
+                $completed = \Carbon\Carbon::parse($assessment->completed_at);
+                $assessment->duration_days = $created->diffInDays($completed);
+                return $assessment;
+            });
 
         if ($assessmentDurations->count() > 0) {
             $avgDuration = $assessmentDurations->avg('duration_days');
@@ -357,9 +359,13 @@ class AnomalyDetectionWidget extends Widget
         
         // Assessment submission patterns
         $submissionHours = SchoolAssessment::whereNotNull('completed_at')
-            ->selectRaw('HOUR(completed_at) as hour, COUNT(*) as count')
-            ->groupBy('hour')
-            ->pluck('count', 'hour')
+            ->get()
+            ->groupBy(function ($assessment) {
+                return \Carbon\Carbon::parse($assessment->completed_at)->hour;
+            })
+            ->map(function ($group) {
+                return $group->count();
+            })
             ->toArray();
 
         // Check for unusual submission times (late night/early morning)
