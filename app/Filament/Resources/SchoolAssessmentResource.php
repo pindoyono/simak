@@ -218,7 +218,7 @@ class SchoolAssessmentResource extends Resource
                             'schoolAssessment' => $record,
                         ]);
                     }),
-                
+
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
