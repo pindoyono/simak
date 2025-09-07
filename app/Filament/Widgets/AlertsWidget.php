@@ -18,7 +18,7 @@ class AlertsWidget extends Widget
     public function getViewData(): array
     {
         $alerts = $this->generateAlerts();
-        
+
         return [
             'alerts' => $alerts,
             'hasUrgent' => $alerts->where('type', 'urgent')->isNotEmpty(),
@@ -36,7 +36,7 @@ class AlertsWidget extends Widget
         $overdueCount = SchoolAssessment::where('status', 'draft')
             ->where('created_at', '<', now()->subDays(30))
             ->count();
-        
+
         if ($overdueCount > 0) {
             $alerts->push([
                 'type' => 'urgent',
@@ -55,7 +55,7 @@ class AlertsWidget extends Widget
                 $q->where('assessment_period_id', $currentPeriod->id);
             }
         })->count();
-        
+
         if ($schoolsWithoutAssessment > 0 && $currentPeriod) {
             $alerts->push([
                 'type' => 'warning',
@@ -89,7 +89,7 @@ class AlertsWidget extends Widget
             ->where('updated_at', '>=', now()->subDays(1))
             ->with('school')
             ->get();
-            
+
         foreach ($recentAssessments->take(2) as $assessment) {
             $alerts->push([
                 'type' => 'success',
@@ -109,12 +109,12 @@ class AlertsWidget extends Widget
                 ->where('total_score', '>', 0)
                 ->with('school')
                 ->get();
-                
+
             if ($lowScoreSchools->isNotEmpty()) {
                 $schoolNames = $lowScoreSchools->pluck('school.nama_sekolah')->take(2)->join(', ');
                 $total = $lowScoreSchools->count();
                 $moreText = $total > 2 ? " and " . ($total - 2) . " more" : "";
-                
+
                 $alerts->push([
                     'type' => 'warning',
                     'icon' => 'heroicon-o-chart-bar-square',

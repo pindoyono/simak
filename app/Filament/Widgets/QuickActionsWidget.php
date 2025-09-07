@@ -18,13 +18,13 @@ class QuickActionsWidget extends Widget
     {
         $user = Auth::user();
         $currentPeriod = AssessmentPeriod::where('is_default', true)->first();
-        
+
         // Get actionable insights
         $pendingAssessments = SchoolAssessment::whereIn('status', ['draft', 'submitted'])
             ->when($currentPeriod, function($q) use ($currentPeriod) {
                 return $q->where('assessment_period_id', $currentPeriod->id);
             })->count();
-            
+
         $schoolsWithoutAssessment = School::whereDoesntHave('schoolAssessments', function($q) use ($currentPeriod) {
             if ($currentPeriod) {
                 $q->where('assessment_period_id', $currentPeriod->id);

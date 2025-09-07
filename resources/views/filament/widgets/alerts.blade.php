@@ -8,11 +8,14 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                         System Alerts
                     </h3>
-                    @if($totalAlerts > 0)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            {{ $hasUrgent ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 
-                               ($hasWarning ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 
-                                'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200') }}">
+                    @if ($totalAlerts > 0)
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {{ $hasUrgent
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                : ($hasWarning
+                                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200') }}">
                             {{ $totalAlerts }}
                         </span>
                     @endif
@@ -23,15 +26,16 @@
             </div>
 
             {{-- Alerts List --}}
-            @if($alerts->isNotEmpty())
+            @if ($alerts->isNotEmpty())
                 <div class="space-y-3">
-                    @foreach($alerts as $alert)
-                        <div class="flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:shadow-sm
+                    @foreach ($alerts as $alert)
+                        <div
+                            class="flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:shadow-sm
                             @switch($alert['type'])
                                 @case('urgent')
                                     bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800
                                     @break
-                                @case('warning') 
+                                @case('warning')
                                     bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800
                                     @break
                                 @case('success')
@@ -40,21 +44,27 @@
                                 @default
                                     bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800
                             @endswitch">
-                            
+
                             {{-- Icon --}}
                             <div class="flex-shrink-0 mt-0.5">
                                 @switch($alert['type'])
                                     @case('urgent')
                                         <x-dynamic-component :component="$alert['icon']" class="h-5 w-5 text-red-500 dark:text-red-400" />
-                                        @break
+                                    @break
+
                                     @case('warning')
-                                        <x-dynamic-component :component="$alert['icon']" class="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
-                                        @break
+                                        <x-dynamic-component :component="$alert['icon']"
+                                            class="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
+                                    @break
+
                                     @case('success')
-                                        <x-dynamic-component :component="$alert['icon']" class="h-5 w-5 text-green-500 dark:text-green-400" />
-                                        @break
+                                        <x-dynamic-component :component="$alert['icon']"
+                                            class="h-5 w-5 text-green-500 dark:text-green-400" />
+                                    @break
+
                                     @default
-                                        <x-dynamic-component :component="$alert['icon']" class="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                                        <x-dynamic-component :component="$alert['icon']"
+                                            class="h-5 w-5 text-blue-500 dark:text-blue-400" />
                                 @endswitch
                             </div>
 
@@ -69,11 +79,11 @@
                                             {{ $alert['message'] }}
                                         </p>
                                     </div>
-                                    
+
                                     {{-- Action Button --}}
-                                    @if(isset($alert['action']) && isset($alert['url']))
-                                        <a href="{{ $alert['url'] }}" 
-                                           class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md transition-colors duration-200
+                                    @if (isset($alert['action']) && isset($alert['url']))
+                                        <a href="{{ $alert['url'] }}"
+                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md transition-colors duration-200
                                                @switch($alert['type'])
                                                    @case('urgent')
                                                        text-red-700 bg-red-100 hover:bg-red-200 dark:text-red-200 dark:bg-red-800 dark:hover:bg-red-700
@@ -110,13 +120,13 @@
             @endif
 
             {{-- Footer Actions --}}
-            @if($alerts->isNotEmpty())
+            @if ($alerts->isNotEmpty())
                 <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                     <p class="text-xs text-gray-500 dark:text-gray-400">
                         Showing {{ $alerts->count() }} most important alerts
                     </p>
-                    <a href="{{ route('filament.admin.resources.school-assessments.index') }}" 
-                       class="text-xs text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 font-medium">
+                    <a href="{{ route('filament.admin.resources.school-assessments.index') }}"
+                        class="text-xs text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 font-medium">
                         View All Assessments →
                     </a>
                 </div>

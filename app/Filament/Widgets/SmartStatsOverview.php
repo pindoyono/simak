@@ -15,40 +15,40 @@ class SmartStatsOverview extends BaseWidget
 {
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = false;
-    
+
     protected function getStats(): array
     {
         // Get current active period
         $currentPeriod = AssessmentPeriod::where('is_default', true)->first();
         $currentPeriodId = $currentPeriod?->id;
-        
+
         // Basic counts
         $totalSchools = School::count();
         $activeSchools = School::where('status', 'Negeri')->orWhere('status', 'Swasta')->count();
-        
+
         // Assessment progress for current period
         $totalAssessments = SchoolAssessment::when($currentPeriodId, function($q) use ($currentPeriodId) {
             return $q->where('assessment_period_id', $currentPeriodId);
         })->count();
-        
+
         $completedAssessments = SchoolAssessment::where('status', 'approved')
             ->when($currentPeriodId, function($q) use ($currentPeriodId) {
                 return $q->where('assessment_period_id', $currentPeriodId);
             })->count();
-            
+
         $inProgressAssessments = SchoolAssessment::whereIn('status', ['draft', 'submitted', 'reviewed'])
             ->when($currentPeriodId, function($q) use ($currentPeriodId) {
                 return $q->where('assessment_period_id', $currentPeriodId);
             })->count();
-        
+
         // Calculate average score for current period
         $averageScore = SchoolAssessment::when($currentPeriodId, function($q) use ($currentPeriodId) {
             return $q->where('assessment_period_id', $currentPeriodId);
         })->avg('total_score') ?? 0;
-        
+
         // School completion percentage
         $schoolCompletionRate = $totalSchools > 0 ? round(($completedAssessments / $totalSchools) * 100, 1) : 0;
-        
+
         // Active assessors
         $activeAssessors = User::whereHas('schoolAssessments', function($q) use ($currentPeriodId) {
             $q->when($currentPeriodId, function($query) use ($currentPeriodId) {
@@ -127,7 +127,7 @@ class SmartStatsOverview extends BaseWidget
     {
         return match (true) {
             $score >= 3.5 => 'Excellent performance',
-            $score >= 2.5 => 'Good performance', 
+            $score >= 2.5 => 'Good performance',
             $score >= 1.5 => 'Needs improvement',
             default => 'Critical attention needed'
         };

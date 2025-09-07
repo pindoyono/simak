@@ -42,6 +42,10 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\SmartStatsOverview::class,
                 \App\Filament\Widgets\QuickActionsWidget::class,
                 \App\Filament\Widgets\AlertsWidget::class,
+                \App\Filament\Widgets\AssessmentProgressChart::class,
+                \App\Filament\Widgets\TrendsWidget::class,
+                \App\Filament\Widgets\SchoolPerformanceWidget::class,
+                \App\Filament\Widgets\SystemHealthWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
