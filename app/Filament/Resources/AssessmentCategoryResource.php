@@ -253,6 +253,7 @@ class AssessmentCategoryResource extends Resource
                                         'application/vnd.ms-excel'
                                     ])
                                     ->maxSize(5120) // 5MB
+                                    ->disk('private')
                                     ->directory('imports/categories')
                                     ->visibility('private')
                                     ->helperText('Format yang didukung: .xlsx, .xls (Maksimal 5MB)')
