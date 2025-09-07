@@ -31,27 +31,27 @@ class ListAssessmentScores extends ListRecords
                 ->badge(AssessmentScore::count())
                 ->icon('heroicon-m-list-bullet'),
 
-            'sangat_baik' => Tab::make('Sangat Baik (A)')
-                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('A'))
-                ->badge(AssessmentScore::byGrade('A')->count())
+            'sangat_baik' => Tab::make('Sangat Baik')
+                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('Sangat Baik'))
+                ->badge(AssessmentScore::byGrade('Sangat Baik')->count())
                 ->icon('heroicon-m-star')
                 ->badgeColor('success'),
 
-            'baik' => Tab::make('Baik (B)')
-                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('B'))
-                ->badge(AssessmentScore::byGrade('B')->count())
+            'baik' => Tab::make('Baik')
+                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('Baik'))
+                ->badge(AssessmentScore::byGrade('Baik')->count())
                 ->icon('heroicon-m-hand-thumb-up')
                 ->badgeColor('info'),
 
-            'cukup' => Tab::make('Cukup (C)')
-                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('C'))
-                ->badge(AssessmentScore::byGrade('C')->count())
+            'cukup' => Tab::make('Cukup')
+                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('Cukup'))
+                ->badge(AssessmentScore::byGrade('Cukup')->count())
                 ->icon('heroicon-m-minus-circle')
                 ->badgeColor('warning'),
 
-            'kurang' => Tab::make('Kurang (D)')
-                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('D'))
-                ->badge(AssessmentScore::byGrade('D')->count())
+            'kurang' => Tab::make('Kurang')
+                ->modifyQueryUsing(fn (Builder $query) => $query->byGrade('Kurang'))
+                ->badge(AssessmentScore::byGrade('Kurang')->count())
                 ->icon('heroicon-m-x-circle')
                 ->badgeColor('danger'),
 

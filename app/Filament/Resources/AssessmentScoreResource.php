@@ -127,10 +127,10 @@ class AssessmentScoreResource extends Resource
                                                 $set('persentase_preview', round($percentage, 2));
 
                                                 $grade = match (true) {
-                                                    $percentage >= 85 => 'A - Sangat Baik',
-                                                    $percentage >= 70 => 'B - Baik',
-                                                    $percentage >= 55 => 'C - Cukup',
-                                                    default => 'D - Kurang',
+                                                    $percentage >= 85 => 'Sangat Baik',
+                                                    $percentage >= 70 => 'Baik',
+                                                    $percentage >= 55 => 'Cukup',
+                                                    default => 'Kurang',
                                                 };
                                                 $set('grade_preview', $grade);
                                             }
@@ -146,7 +146,7 @@ class AssessmentScoreResource extends Resource
                                                 ),
 
                                             Forms\Components\Placeholder::make('grade_preview')
-                                                ->label('Grade')
+                                                ->label('Nilai')
                                                 ->content(fn (Forms\Get $get) => $get('grade_preview') ?? '-'),
                                         ])
                                 ]),
@@ -225,10 +225,15 @@ class AssessmentScoreResource extends Resource
                     }),
 
                 TextColumn::make('grade')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->badge()
                     ->alignCenter()
                     ->color(fn (string $state): string => match ($state) {
+                        'Sangat Baik' => 'success',
+                        'Baik' => 'info', 
+                        'Cukup' => 'warning',
+                        'Kurang' => 'danger',
+                        // Backward compatibility
                         'A' => 'success',
                         'B' => 'info',
                         'C' => 'warning',
@@ -236,10 +241,15 @@ class AssessmentScoreResource extends Resource
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'A' => 'A - Sangat Baik',
-                        'B' => 'B - Baik',
-                        'C' => 'C - Cukup',
-                        'D' => 'D - Kurang',
+                        'Sangat Baik' => 'Sangat Baik',
+                        'Baik' => 'Baik',
+                        'Cukup' => 'Cukup',
+                        'Kurang' => 'Kurang',
+                        // Backward compatibility - convert old grades to new format
+                        'A' => 'Sangat Baik',
+                        'B' => 'Baik',
+                        'C' => 'Cukup',
+                        'D' => 'Kurang',
                         default => 'Tidak Dinilai',
                     }),
 
@@ -264,12 +274,12 @@ class AssessmentScoreResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('grade')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->options([
-                        'A' => 'A - Sangat Baik (≥85%)',
-                        'B' => 'B - Baik (70-84%)',
-                        'C' => 'C - Cukup (55-69%)',
-                        'D' => 'D - Kurang (<55%)',
+                        'Sangat Baik' => 'Sangat Baik (≥85%)',
+                        'Baik' => 'Baik (70-84%)',
+                        'Cukup' => 'Cukup (55-69%)',
+                        'Kurang' => 'Kurang (<55%)',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         if (! $data['value']) {
@@ -386,7 +396,7 @@ class AssessmentScoreResource extends Resource
                                 ->badge(),
 
                             TextEntry::make('grade_label')
-                                ->label('Grade')
+                                ->label('Nilai')
                                 ->badge(),
                         ]),
                 ])->from('lg'),

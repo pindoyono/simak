@@ -335,6 +335,7 @@ class AssessmentIndicatorResource extends Resource
                                         'application/vnd.ms-excel'
                                     ])
                                     ->maxSize(10240) // 10MB
+                                    ->disk('private')
                                     ->directory('imports/indicators')
                                     ->visibility('private')
                                     ->helperText('Format yang didukung: .xlsx, .xls (Maksimal 10MB)')
@@ -370,18 +371,30 @@ class AssessmentIndicatorResource extends Resource
                             return;
                         }
 
-                        $fullPath = Storage::disk('private')->path($filePath);
-
-                        if (!file_exists($fullPath)) {
-                            Notification::make()
-                                ->danger()
-                                ->title('Import Gagal')
-                                ->body('File tidak dapat diakses. Silakan coba upload kembali.')
-                                ->send();
-                            return;
-                        }
-
                         try {
+                            // Get the full path to the uploaded file
+                            $fullPath = Storage::disk('private')->path($filePath);
+
+                            // Check if file exists
+                            if (!file_exists($fullPath)) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Import Gagal')
+                                    ->body('File tidak dapat diakses. Path: ' . $fullPath . '. Silakan coba upload kembali.')
+                                    ->send();
+                                return;
+                            }
+
+                            // Check file permissions
+                            if (!is_readable($fullPath)) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Import Gagal')
+                                    ->body('File tidak dapat dibaca. Periksa permissions file.')
+                                    ->send();
+                                return;
+                            }
+
                             $import = new AssessmentIndicatorImport();
                             Excel::import($import, $fullPath);
 

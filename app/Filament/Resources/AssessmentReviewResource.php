@@ -53,8 +53,13 @@ class AssessmentReviewResource extends Resource
                     ->default('pending'),
 
                 Forms\Components\Select::make('grade_recommendation')
-                    ->label('Grade Recommendation')
+                    ->label('Rekomendasi Nilai')
                     ->options([
+                        'Sangat Baik' => 'Sangat Baik (≥85%)',
+                        'Baik' => 'Baik (70-84%)',
+                        'Cukup' => 'Cukup (55-69%)',
+                        'Kurang' => 'Kurang (<55%)',
+                        // Backward compatibility
                         'A' => 'A - Sangat Baik (≥85%)',
                         'B' => 'B - Baik (70-84%)',
                         'C' => 'C - Cukup (55-69%)',
@@ -125,13 +130,25 @@ class AssessmentReviewResource extends Resource
                     }),
 
                 Tables\Columns\BadgeColumn::make('grade_recommendation')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->colors([
-                        'success' => 'A',
-                        'info' => 'B',
-                        'warning' => 'C',
-                        'danger' => 'D',
+                        'success' => ['A', 'Sangat Baik'],
+                        'info' => ['B', 'Baik'],
+                        'warning' => ['C', 'Cukup'],
+                        'danger' => ['D', 'Kurang'],
                     ])
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'Sangat Baik' => 'Sangat Baik',
+                        'Baik' => 'Baik',
+                        'Cukup' => 'Cukup',
+                        'Kurang' => 'Kurang',
+                        // Backward compatibility
+                        'A' => 'Sangat Baik',
+                        'B' => 'Baik',
+                        'C' => 'Cukup',
+                        'D' => 'Kurang',
+                        default => 'N/A',
+                    })
                     ->default('N/A'),
 
                 Tables\Columns\TextColumn::make('reviewer.name')
@@ -161,8 +178,13 @@ class AssessmentReviewResource extends Resource
                     ]),
 
                 Tables\Filters\SelectFilter::make('grade_recommendation')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->options([
+                        'Sangat Baik' => 'Sangat Baik',
+                        'Baik' => 'Baik',
+                        'Cukup' => 'Cukup',
+                        'Kurang' => 'Kurang',
+                        // Backward compatibility
                         'A' => 'A - Sangat Baik',
                         'B' => 'B - Baik',
                         'C' => 'C - Cukup',

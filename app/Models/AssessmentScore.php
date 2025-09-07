@@ -67,20 +67,20 @@ class AssessmentScore extends Model
     public function getGradeAttribute(): string
     {
         return match (true) {
-            $this->persentase >= 85 => 'A',
-            $this->persentase >= 70 => 'B',
-            $this->persentase >= 55 => 'C',
-            default => 'D',
+            $this->persentase >= 85 => 'Sangat Baik',
+            $this->persentase >= 70 => 'Baik',
+            $this->persentase >= 55 => 'Cukup',
+            default => 'Kurang',
         };
     }
 
     public function getGradeLabelAttribute(): string
     {
         return match ($this->grade) {
-            'A' => 'A - Sangat Baik (≥85%)',
-            'B' => 'B - Baik (70-84%)',
-            'C' => 'C - Cukup (55-69%)',
-            'D' => 'D - Kurang (<55%)',
+            'Sangat Baik' => 'Sangat Baik (≥85%)',
+            'Baik' => 'Baik (70-84%)',
+            'Cukup' => 'Cukup (55-69%)',
+            'Kurang' => 'Kurang (<55%)',
             default => 'Tidak Dinilai',
         };
     }
@@ -88,10 +88,10 @@ class AssessmentScore extends Model
     public function getGradeColorAttribute(): string
     {
         return match ($this->grade) {
-            'A' => 'success',
-            'B' => 'info',
-            'C' => 'warning',
-            'D' => 'danger',
+            'Sangat Baik' => 'success',
+            'Baik' => 'info',
+            'Cukup' => 'warning',
+            'Kurang' => 'danger',
             default => 'gray',
         };
     }
@@ -122,6 +122,11 @@ class AssessmentScore extends Model
     {
         return $query->whereHas('assessmentIndicator', function ($subQuery) use ($grade) {
             $condition = match ($grade) {
+                'Sangat Baik' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 85',
+                'Baik' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 70 AND (assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 85',
+                'Cukup' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 55 AND (assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 70',
+                'Kurang' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 55',
+                // Keep backward compatibility for old letter grades
                 'A' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 85',
                 'B' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 70 AND (assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 85',
                 'C' => '(assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 >= 55 AND (assessment_scores.skor / assessment_indicators.skor_maksimal) * 100 < 70',
@@ -168,16 +173,16 @@ class AssessmentScore extends Model
     // Helper Methods
     public function isExcellent(): bool
     {
-        return $this->grade === 'A';
+        return $this->grade === 'Sangat Baik';
     }
 
     public function isGood(): bool
     {
-        return in_array($this->grade, ['A', 'B']);
+        return in_array($this->grade, ['Sangat Baik', 'Baik']);
     }
 
     public function needsImprovement(): bool
     {
-        return in_array($this->grade, ['C', 'D']);
+        return in_array($this->grade, ['Cukup', 'Kurang']);
     }
 }

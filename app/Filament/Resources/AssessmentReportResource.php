@@ -124,24 +124,24 @@ class AssessmentReportResource extends Resource
                                         ->afterStateUpdated(function (Forms\Set $set, $state) {
                                             if ($state) {
                                                 $grade = match (true) {
-                                                    $state >= 85 => 'A',
-                                                    $state >= 70 => 'B',
-                                                    $state >= 55 => 'C',
-                                                    default => 'D',
+                                                    $state >= 85 => 'Sangat Baik',
+                                                    $state >= 70 => 'Baik',
+                                                    $state >= 55 => 'Cukup',
+                                                    default => 'Kurang',
                                                 };
                                                 $set('grade_akhir', $grade);
                                             }
                                         }),
 
                                     Forms\Components\Select::make('grade_akhir')
-                                        ->label('Grade Akhir')
+                                        ->label('Nilai Akhir')
                                         ->options([
-                                            'A' => 'A - Sangat Baik',
-                                            'B' => 'B - Baik',
-                                            'C' => 'C - Cukup',
-                                            'D' => 'D - Kurang',
+                                            'Sangat Baik' => 'Sangat Baik',
+                                            'Baik' => 'Baik',
+                                            'Cukup' => 'Cukup',
+                                            'Kurang' => 'Kurang',
                                         ])
-                                        ->placeholder('Pilih grade'),
+                                        ->placeholder('Pilih nilai'),
                                 ]),
                         ]),
                 ])
@@ -278,10 +278,15 @@ class AssessmentReportResource extends Resource
                     }),
 
                 TextColumn::make('grade_akhir')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->badge()
                     ->alignCenter()
                     ->color(fn (?string $state): string => match ($state) {
+                        'Sangat Baik' => 'success',
+                        'Baik' => 'info',
+                        'Cukup' => 'warning',
+                        'Kurang' => 'danger',
+                        // Backward compatibility
                         'A' => 'success',
                         'B' => 'info',
                         'C' => 'warning',
@@ -289,10 +294,15 @@ class AssessmentReportResource extends Resource
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'A' => 'A - Sangat Baik',
-                        'B' => 'B - Baik',
-                        'C' => 'C - Cukup',
-                        'D' => 'D - Kurang',
+                        'Sangat Baik' => 'Sangat Baik',
+                        'Baik' => 'Baik',
+                        'Cukup' => 'Cukup',
+                        'Kurang' => 'Kurang',
+                        // Backward compatibility
+                        'A' => 'Sangat Baik',
+                        'B' => 'Baik',
+                        'C' => 'Cukup',
+                        'D' => 'Kurang',
                         default => 'Belum Dinilai',
                     }),
 
@@ -331,8 +341,13 @@ class AssessmentReportResource extends Resource
                     ]),
 
                 SelectFilter::make('grade_akhir')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->options([
+                        'Sangat Baik' => 'Sangat Baik (≥85%)',
+                        'Baik' => 'Baik (70-84%)',
+                        'Cukup' => 'Cukup (55-69%)',
+                        'Kurang' => 'Kurang (<55%)',
+                        // Backward compatibility
                         'A' => 'A - Sangat Baik (≥85%)',
                         'B' => 'B - Baik (70-84%)',
                         'C' => 'C - Cukup (55-69%)',

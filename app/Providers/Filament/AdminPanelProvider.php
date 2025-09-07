@@ -27,7 +27,9 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->brandName('SIMAK-PM')
+            ->brandLogo(fn () => view('filament.brand-logo'))
             ->colors([
                 'primary' => Color::Amber,
             ])

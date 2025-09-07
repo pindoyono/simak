@@ -77,8 +77,13 @@ class SchoolAssessmentResource extends Resource
                                     ->step(0.01),
 
                                 Forms\Components\Select::make('grade')
-                                    ->label('Grade')
+                                    ->label('Nilai')
                                     ->options([
+                                        'Sangat Baik' => 'Sangat Baik',
+                                        'Baik' => 'Baik',
+                                        'Cukup' => 'Cukup',
+                                        'Kurang' => 'Kurang',
+                                        // Backward compatibility
                                         'A' => 'A - Sangat Baik',
                                         'B' => 'B - Baik',
                                         'C' => 'C - Cukup',
@@ -139,16 +144,33 @@ class SchoolAssessmentResource extends Resource
                     ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('grade')
-                    ->label('Grade')
+                    ->label('Nilai')
                     ->sortable()
                     ->alignCenter()
                     ->badge()
                     ->color(fn ($state) => match ($state) {
+                        'Sangat Baik' => 'success',
+                        'Baik' => 'info',
+                        'Cukup' => 'warning',
+                        'Kurang' => 'danger',
+                        // Backward compatibility
                         'A' => 'success',
                         'B' => 'info',
                         'C' => 'warning',
                         'D' => 'danger',
                         default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'Sangat Baik' => 'Sangat Baik',
+                        'Baik' => 'Baik',
+                        'Cukup' => 'Cukup',
+                        'Kurang' => 'Kurang',
+                        // Backward compatibility
+                        'A' => 'Sangat Baik',
+                        'B' => 'Baik',
+                        'C' => 'Cukup',
+                        'D' => 'Kurang',
+                        default => 'Belum Dinilai',
                     }),
 
                 Tables\Columns\BadgeColumn::make('status')
@@ -199,6 +221,7 @@ class SchoolAssessmentResource extends Resource
                         'approved' => 'Approved',
                     ]),
             ])
+            ->actionsPosition(Tables\Enums\ActionsPosition::BeforeColumns)
             ->actions([
                 Tables\Actions\Action::make('assessment')
                     ->label('Assessment')
@@ -206,6 +229,10 @@ class SchoolAssessmentResource extends Resource
                     ->color('info')
                     ->modalHeading(fn ($record) => 'Detail Assessment - ' . $record->school->nama_sekolah)
                     ->modalWidth('7xl')
+                    ->modalAlignment('start')
+                    ->modalFooterActions([])
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(false)
                     ->modalContent(function ($record) {
                         // Get all assessment scores for this school assessment
                         $assessmentScores = \App\Models\AssessmentScore::where('school_assessment_id', $record->id)
@@ -219,9 +246,18 @@ class SchoolAssessmentResource extends Resource
                         ]);
                     }),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('export_pdf')
+                        ->label('Export PDF')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->color('success')
+                        ->openUrlInNewTab()
+                        ->url(fn ($record) => route('assessment.export-pdf', $record->id)),
+
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ])->label('Actions')->icon('heroicon-m-ellipsis-horizontal')->color('gray'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -269,14 +305,31 @@ class SchoolAssessmentResource extends Resource
                                     ->numeric(2),
 
                                 Infolists\Components\TextEntry::make('grade')
-                                    ->label('Grade')
+                                    ->label('Nilai')
                                     ->badge()
                                     ->color(fn ($state) => match ($state) {
+                                        'Sangat Baik' => 'success',
+                                        'Baik' => 'info',
+                                        'Cukup' => 'warning',
+                                        'Kurang' => 'danger',
+                                        // Backward compatibility
                                         'A' => 'success',
                                         'B' => 'info',
                                         'C' => 'warning',
                                         'D' => 'danger',
                                         default => 'gray',
+                                    })
+                                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                        'Sangat Baik' => 'Sangat Baik',
+                                        'Baik' => 'Baik',
+                                        'Cukup' => 'Cukup',
+                                        'Kurang' => 'Kurang',
+                                        // Backward compatibility
+                                        'A' => 'Sangat Baik',
+                                        'B' => 'Baik',
+                                        'C' => 'Cukup',
+                                        'D' => 'Kurang',
+                                        default => 'Belum Dinilai',
                                     }),
                             ]),
                     ]),

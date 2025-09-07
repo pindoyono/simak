@@ -95,7 +95,7 @@ class ViewAssessmentScore extends ViewRecord
                                 ]),
 
                             TextEntry::make('grade_label')
-                                ->label('Grade Penilaian')
+                                ->label('Nilai Penilaian')
                                 ->badge()
                                 ->size('lg')
                                 ->weight(FontWeight::Bold),

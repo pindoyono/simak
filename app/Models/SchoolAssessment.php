@@ -96,11 +96,16 @@ class SchoolAssessment extends Model
     public function getGradeWithDescriptionAttribute(): string
     {
         return match($this->grade) {
-            'A' => 'A (Sangat Baik)',
-            'B' => 'B (Baik)',
-            'C' => 'C (Cukup Baik)',
-            'D' => 'D (Kurang)',
-            'F' => 'F (Gagal)',
+            'Sangat Baik' => 'Sangat Baik',
+            'Baik' => 'Baik',
+            'Cukup' => 'Cukup',
+            'Kurang' => 'Kurang',
+            // Keep backward compatibility
+            'A' => 'Sangat Baik',
+            'B' => 'Baik',
+            'C' => 'Cukup',
+            'D' => 'Kurang',
+            'F' => 'Kurang',
             default => $this->grade ?? 'N/A',
         };
     }

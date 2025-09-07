@@ -1,9 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "simak/pm",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Sistem Informasi Model Assessment Kinerja Pendidikan Menengah (SIMAK-PM)",
+    "keywords": [
+        "assessment",
+        "pendidikan",
+        "menengah",
+        "simak"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",

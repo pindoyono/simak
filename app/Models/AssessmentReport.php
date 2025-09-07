@@ -92,10 +92,15 @@ class AssessmentReport extends Model
     public function getGradeLabelAttribute(): string
     {
         return match ($this->grade_akhir) {
-            'A' => 'A - Sangat Baik (≥85%)',
-            'B' => 'B - Baik (70-84%)',
-            'C' => 'C - Cukup (55-69%)',
-            'D' => 'D - Kurang (<55%)',
+            'Sangat Baik' => 'Sangat Baik (≥85%)',
+            'Baik' => 'Baik (70-84%)',
+            'Cukup' => 'Cukup (55-69%)',
+            'Kurang' => 'Kurang (<55%)',
+            // Keep backward compatibility
+            'A' => 'Sangat Baik (≥85%)',
+            'B' => 'Baik (70-84%)',
+            'C' => 'Cukup (55-69%)',
+            'D' => 'Kurang (<55%)',
             default => 'Belum Dinilai',
         };
     }
@@ -103,6 +108,11 @@ class AssessmentReport extends Model
     public function getGradeColorAttribute(): string
     {
         return match ($this->grade_akhir) {
+            'Sangat Baik' => 'success',
+            'Baik' => 'info',
+            'Cukup' => 'warning',
+            'Kurang' => 'danger',
+            // Keep backward compatibility
             'A' => 'success',
             'B' => 'info',
             'C' => 'warning',
@@ -174,12 +184,12 @@ class AssessmentReport extends Model
 
     public function scopeHighPerforming($query)
     {
-        return $query->whereIn('grade_akhir', ['A', 'B']);
+        return $query->whereIn('grade_akhir', ['Sangat Baik', 'Baik', 'A', 'B']); // Include both new and old grades
     }
 
     public function scopeLowPerforming($query)
     {
-        return $query->whereIn('grade_akhir', ['C', 'D']);
+        return $query->whereIn('grade_akhir', ['Cukup', 'Kurang', 'C', 'D']); // Include both new and old grades
     }
 
     public function scopeWithFiles($query)
