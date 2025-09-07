@@ -200,6 +200,25 @@ class SchoolAssessmentResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('assessment')
+                    ->label('Assessment')
+                    ->icon('heroicon-o-chart-bar-square')
+                    ->color('info')
+                    ->modalHeading(fn ($record) => 'Detail Assessment - ' . $record->school->nama_sekolah)
+                    ->modalWidth('7xl')
+                    ->modalContent(function ($record) {
+                        // Get all assessment scores for this school assessment
+                        $assessmentScores = \App\Models\AssessmentScore::where('school_assessment_id', $record->id)
+                            ->with(['assessmentIndicator.assessmentCategory'])
+                            ->get()
+                            ->groupBy('assessmentIndicator.assessmentCategory.nama_kategori');
+
+                        return view('filament.modals.assessment-scores', [
+                            'assessmentScores' => $assessmentScores,
+                            'schoolAssessment' => $record,
+                        ]);
+                    }),
+                
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
