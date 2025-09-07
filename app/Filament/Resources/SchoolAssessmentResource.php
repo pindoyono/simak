@@ -209,9 +209,9 @@ class SchoolAssessmentResource extends Resource
                     ->modalContent(function ($record) {
                         // Get all assessment scores for this school assessment
                         $assessmentScores = \App\Models\AssessmentScore::where('school_assessment_id', $record->id)
-                            ->with(['assessmentIndicator.assessmentCategory'])
+                            ->with(['assessmentIndicator.category'])
                             ->get()
-                            ->groupBy('assessmentIndicator.assessmentCategory.nama_kategori');
+                            ->groupBy('assessmentIndicator.category.nama_kategori');
 
                         return view('filament.modals.assessment-scores', [
                             'assessmentScores' => $assessmentScores,
