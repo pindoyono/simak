@@ -35,6 +35,14 @@ class AssessmentIndicatorExport implements FromCollection, WithHeadings, WithSty
             $indicator->skor_maksimal,
             $indicator->urutan,
             $indicator->is_active ? 'ya' : 'tidak',
+            // Kolom-kolom baru
+            strip_tags($indicator->kegiatan ?? ''),
+            strip_tags($indicator->sumber_data ?? ''),
+            $indicator->keterangan ?? '',
+            strip_tags($indicator->kriteria_sangat_baik ?? ''),
+            strip_tags($indicator->kriteria_baik ?? ''),
+            strip_tags($indicator->kriteria_cukup ?? ''),
+            strip_tags($indicator->kriteria_kurang ?? ''),
         ];
     }
 
@@ -48,6 +56,15 @@ class AssessmentIndicatorExport implements FromCollection, WithHeadings, WithSty
             'kriteria_penilaian',
             'skor_maksimal',
             'urutan',
+            'is_active',
+            // Kolom-kolom baru
+            'kegiatan',
+            'sumber_data',
+            'keterangan',
+            'kriteria_sangat_baik',
+            'kriteria_baik',
+            'kriteria_cukup',
+            'kriteria_kurang',
             'is_active',
         ];
     }
@@ -111,6 +128,18 @@ class AssessmentIndicatorExport implements FromCollection, WithHeadings, WithSty
             'B' => 50, // nama_indikator (increased for longer text)
             'C' => 40, // deskripsi
             'D' => 15, // bobot_indikator
+            'E' => 50, // kriteria_penilaian
+            'F' => 12, // skor_maksimal
+            'G' => 10, // urutan
+            'H' => 12, // is_active
+            // Kolom-kolom baru
+            'I' => 40, // kegiatan
+            'J' => 40, // sumber_data
+            'K' => 40, // keterangan
+            'L' => 40, // kriteria_sangat_baik
+            'M' => 40, // kriteria_baik
+            'N' => 40, // kriteria_cukup
+            'O' => 40, // kriteria_kurang
             'E' => 50, // kriteria_penilaian
             'F' => 12, // skor_maksimal
             'G' => 10, // urutan

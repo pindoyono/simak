@@ -18,37 +18,37 @@ class AssessmentCategoryTemplateExport implements FromCollection, WithHeadings, 
 {
     public function collection()
     {
-        // Return example data for template dengan komponen ENUM yang valid
+        // Return example data for template dengan komponen baru SIMAK-PM
         return collect([
             [
-                'SISWA',
-                'Standar Isi dan Kurikulum',
-                'Penilaian terhadap standar isi dan kurikulum sekolah yang sesuai dengan standar nasional',
-                15.00,
+                'KEPALA SEKOLAH',
+                'Kepemimpinan dan Manajemen Sekolah',
+                'Penilaian terhadap kemampuan kepala sekolah dalam memimpin dan mengelola sekolah secara efektif',
+                20.00,
                 1,
                 'Aktif'
             ],
             [
-                'GURU',
-                'Kompetensi Pedagogik',
-                'Penilaian terhadap kemampuan guru dalam mengelola pembelajaran dan memahami peserta didik',
-                20.00,
+                'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)',
+                'Kepuasan Siswa dan Stakeholder',
+                'Penilaian terhadap tingkat kepuasan siswa, orang tua, dan masyarakat terhadap layanan pendidikan',
+                25.00,
                 2,
                 'Aktif'
             ],
             [
-                'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN',
-                'Perencanaan Pembelajaran',
-                'Penilaian terhadap kemampuan guru dalam merencanakan dan melaksanakan pembelajaran',
-                25.00,
+                'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)',
+                'Kompetensi dan Kinerja SDM',
+                'Penilaian terhadap kompetensi dan kinerja tenaga pendidik dan kependidikan',
+                20.00,
                 3,
                 'Aktif'
             ],
             [
-                'MANAGEMENT KEPALA SEKOLAH',
-                'Kepemimpinan Sekolah',
-                'Penilaian terhadap kemampuan kepala sekolah dalam memimpin dan mengelola sekolah',
-                20.00,
+                'PROSES',
+                'Proses Pembelajaran dan Operasional',
+                'Penilaian terhadap efektivitas proses pembelajaran dan operasional sekolah',
+                25.00,
                 4,
                 'Aktif'
             ]

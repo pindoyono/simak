@@ -40,14 +40,16 @@ class AssessmentCategoryResource extends Resource
                             ->label('Komponen Utama')
                             ->required()
                             ->options([
-                                'SISWA' => 'SISWA - Standar Pencapaian Siswa',
-                                'GURU' => 'GURU - Standar Kualitas Guru',
-                                'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN' => 'KINERJA GURU - Evaluasi Proses Pembelajaran',
-                                'MANAGEMENT KEPALA SEKOLAH' => 'MANAGEMENT KEPALA SEKOLAH - Kepemimpinan dan Pengelolaan',
+                                'KEPALA SEKOLAH' => 'KEPALA SEKOLAH - Kepemimpinan dan Pengelolaan Sekolah',
+                                'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'PELANGGAN - Siswa, Orang Tua dan Masyarakat',
+                                'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'PENGUKURAN & ANALISIS - Managemen Pengetahuan',
+                                'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'TENAGA KERJA - Pendidik dan Kependidikan',
+                                'PROSES' => 'PROSES - Pembelajaran dan Operasional',
+                                'HASIL PRODUK DAN/ATAU LAYANAN' => 'HASIL PRODUK - Layanan Pendidikan',
                             ])
                             ->native(false)
                             ->placeholder('Pilih komponen utama asesmen')
-                            ->helperText('Komponen utama yang akan dinilai dalam asesmen'),
+                            ->helperText('Komponen utama SIMAK-PM yang akan dinilai dalam asesmen'),
 
                         Forms\Components\TextInput::make('nama_kategori')
                             ->label('Nama Kategori')
@@ -113,18 +115,22 @@ class AssessmentCategoryResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'SISWA' => 'blue',
-                        'GURU' => 'green',
-                        'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN' => 'yellow',
-                        'MANAGEMENT KEPALA SEKOLAH' => 'purple',
+                        'KEPALA SEKOLAH' => 'purple',
+                        'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'blue',
+                        'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'orange',
+                        'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'green',
+                        'PROSES' => 'yellow',
+                        'HASIL PRODUK DAN/ATAU LAYANAN' => 'red',
                         default => 'gray',
                     })
                     ->formatStateUsing(function (string $state): string {
                         return match ($state) {
-                            'SISWA' => 'SISWA',
-                            'GURU' => 'GURU',
-                            'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN' => 'KINERJA GURU',
-                            'MANAGEMENT KEPALA SEKOLAH' => 'KEPALA SEKOLAH',
+                            'KEPALA SEKOLAH' => 'KEPALA SEKOLAH',
+                            'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'PELANGGAN',
+                            'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'PENGUKURAN & ANALISIS',
+                            'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'TENAGA KERJA',
+                            'PROSES' => 'PROSES',
+                            'HASIL PRODUK DAN/ATAU LAYANAN' => 'HASIL PRODUK',
                             default => $state,
                         };
                     }),
@@ -196,10 +202,12 @@ class AssessmentCategoryResource extends Resource
                 Tables\Filters\SelectFilter::make('komponen')
                     ->label('Komponen Utama')
                     ->options([
-                        'SISWA' => 'SISWA',
-                        'GURU' => 'GURU',
-                        'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN' => 'KINERJA GURU',
-                        'MANAGEMENT KEPALA SEKOLAH' => 'KEPALA SEKOLAH',
+                        'KEPALA SEKOLAH' => 'KEPALA SEKOLAH',
+                        'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'PELANGGAN',
+                        'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'PENGUKURAN & ANALISIS',
+                        'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'TENAGA KERJA',
+                        'PROSES' => 'PROSES',
+                        'HASIL PRODUK DAN/ATAU LAYANAN' => 'HASIL PRODUK',
                     ])
                     ->multiple(),
 

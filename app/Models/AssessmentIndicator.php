@@ -20,6 +20,14 @@ class AssessmentIndicator extends Model
         'skor_maksimal',
         'urutan',
         'is_active',
+        // Kolom baru yang ditambahkan
+        'kegiatan',
+        'sumber_data',
+        'keterangan',
+        'kriteria_sangat_baik',
+        'kriteria_baik',
+        'kriteria_cukup',
+        'kriteria_kurang',
     ];
 
     protected $casts = [
@@ -87,6 +95,46 @@ class AssessmentIndicator extends Model
     public function getFullNameAttribute(): string
     {
         return "{$this->category->komponen} - {$this->category->nama_kategori} - {$this->nama_indikator}";
+    }
+
+    // Helper methods untuk kriteria baru
+    public function getKriteriaByScore(int $score): ?string
+    {
+        return match($score) {
+            4 => $this->kriteria_sangat_baik,
+            3 => $this->kriteria_baik,
+            2 => $this->kriteria_cukup,
+            1 => $this->kriteria_kurang,
+            default => null,
+        };
+    }
+
+    public function getAllKriteria(): array
+    {
+        return [
+            4 => ['label' => 'Sangat Baik', 'kriteria' => $this->kriteria_sangat_baik],
+            3 => ['label' => 'Baik', 'kriteria' => $this->kriteria_baik],
+            2 => ['label' => 'Cukup', 'kriteria' => $this->kriteria_cukup],
+            1 => ['label' => 'Kurang', 'kriteria' => $this->kriteria_kurang],
+        ];
+    }
+
+    public function getKriteriaLengkapAttribute(): bool
+    {
+        return !empty($this->kriteria_sangat_baik) &&
+               !empty($this->kriteria_baik) &&
+               !empty($this->kriteria_cukup) &&
+               !empty($this->kriteria_kurang);
+    }
+
+    public function getKriteriaCountAttribute(): int
+    {
+        $count = 0;
+        if (!empty($this->kriteria_sangat_baik)) $count++;
+        if (!empty($this->kriteria_baik)) $count++;
+        if (!empty($this->kriteria_cukup)) $count++;
+        if (!empty($this->kriteria_kurang)) $count++;
+        return $count;
     }
 
     // Legacy support for old field names

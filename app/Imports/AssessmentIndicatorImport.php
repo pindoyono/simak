@@ -48,6 +48,16 @@ class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidati
             'bobot_indikator' => (float) ($row['bobot_indikator'] ?? 0),
             'kriteria_penilaian' => $row['kriteria_penilaian'] ?? null,
             'skor_maksimal' => (int) ($row['skor_maksimal'] ?? 4),
+            'urutan' => (int) ($row['urutan'] ?? 1),
+            'is_active' => isset($row['is_active']) ? filter_var($row['is_active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true : true,
+            // Kolom-kolom baru
+            'kegiatan' => $row['kegiatan'] ?? null,
+            'sumber_data' => $row['sumber_data'] ?? null,
+            'keterangan' => $row['keterangan'] ?? null,
+            'kriteria_sangat_baik' => $row['kriteria_sangat_baik'] ?? null,
+            'kriteria_baik' => $row['kriteria_baik'] ?? null,
+            'kriteria_cukup' => $row['kriteria_cukup'] ?? null,
+            'kriteria_kurang' => $row['kriteria_kurang'] ?? null,
             'urutan' => (int) ($row['urutan'] ?? 0),
             'is_active' => $this->parseBoolean($row['is_active'] ?? true),
         ]);
@@ -66,6 +76,14 @@ class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidati
             'skor_maksimal' => 'nullable|numeric|min:1|max:10',
             'urutan' => 'nullable|numeric|min:0',
             'is_active' => 'nullable|in:1,0,true,false,ya,tidak,aktif,nonaktif',
+            // Validasi untuk kolom-kolom baru
+            'kegiatan' => 'nullable|string',
+            'sumber_data' => 'nullable|string',
+            'keterangan' => 'nullable|string',
+            'kriteria_sangat_baik' => 'nullable|string',
+            'kriteria_baik' => 'nullable|string',
+            'kriteria_cukup' => 'nullable|string',
+            'kriteria_kurang' => 'nullable|string',
         ];
     }
 

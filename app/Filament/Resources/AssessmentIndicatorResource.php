@@ -70,11 +70,128 @@ class AssessmentIndicatorResource extends Resource
                             ->placeholder('Jelaskan secara detail tentang indikator ini, apa saja yang dinilai, dan bagaimana cara penilaiannya...')
                             ->helperText('Penjelasan mendalam mengenai indikator dan cara penilaiannya')
                             ->columnSpanFull(),
+                    ])
+                    ->columns(1),
+
+                Forms\Components\Section::make('Detail Kegiatan & Sumber Data')
+                    ->description('Informasi kegiatan penilaian dan sumber data')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->schema([
+                        Forms\Components\RichEditor::make('kegiatan')
+                            ->label('Kegiatan Penilaian')
+                            ->placeholder('Jelaskan kegiatan atau aktivitas yang akan dinilai dalam indikator ini...')
+                            ->helperText('Deskripsi kegiatan-kegiatan yang akan dievaluasi')
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                            ])
+                            ->columnSpanFull(),
+
+                        Forms\Components\RichEditor::make('sumber_data')
+                            ->label('Sumber Data')
+                            ->placeholder('Sebutkan sumber data yang diperlukan untuk penilaian indikator ini...')
+                            ->helperText('Sumber data atau dokumen yang dibutuhkan untuk penilaian')
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                            ])
+                            ->columnSpanFull(),
+
+                        Forms\Components\Textarea::make('keterangan')
+                            ->label('Keterangan Tambahan')
+                            ->rows(3)
+                            ->placeholder('Keterangan atau catatan khusus untuk indikator ini...')
+                            ->helperText('Informasi tambahan atau catatan penting')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(1),
+
+                Forms\Components\Section::make('Kriteria Penilaian Detail')
+                    ->description('Kriteria penilaian untuk setiap level skor')
+                    ->icon('heroicon-o-star')
+                    ->schema([
+                        Forms\Components\Tabs::make('Kriteria Tabs')
+                            ->tabs([
+                                Forms\Components\Tabs\Tab::make('Sangat Baik (4)')
+                                    ->icon('heroicon-o-trophy')
+                                    ->schema([
+                                        Forms\Components\RichEditor::make('kriteria_sangat_baik')
+                                            ->label('Kriteria Sangat Baik (Skor 4)')
+                                            ->placeholder('Jelaskan kriteria untuk mendapat skor 4 (Sangat Baik)...')
+                                            ->helperText('Kriteria lengkap untuk penilaian dengan skor maksimal')
+                                            ->toolbarButtons([
+                                                'bold',
+                                                'italic',
+                                                'underline',
+                                                'bulletList',
+                                                'orderedList',
+                                            ])
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Forms\Components\Tabs\Tab::make('Baik (3)')
+                                    ->icon('heroicon-o-star')
+                                    ->schema([
+                                        Forms\Components\RichEditor::make('kriteria_baik')
+                                            ->label('Kriteria Baik (Skor 3)')
+                                            ->placeholder('Jelaskan kriteria untuk mendapat skor 3 (Baik)...')
+                                            ->helperText('Kriteria untuk penilaian dengan skor baik')
+                                            ->toolbarButtons([
+                                                'bold',
+                                                'italic',
+                                                'underline',
+                                                'bulletList',
+                                                'orderedList',
+                                            ])
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Forms\Components\Tabs\Tab::make('Cukup (2)')
+                                    ->icon('heroicon-o-minus-circle')
+                                    ->schema([
+                                        Forms\Components\RichEditor::make('kriteria_cukup')
+                                            ->label('Kriteria Cukup (Skor 2)')
+                                            ->placeholder('Jelaskan kriteria untuk mendapat skor 2 (Cukup)...')
+                                            ->helperText('Kriteria untuk penilaian dengan skor cukup')
+                                            ->toolbarButtons([
+                                                'bold',
+                                                'italic',
+                                                'underline',
+                                                'bulletList',
+                                                'orderedList',
+                                            ])
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Forms\Components\Tabs\Tab::make('Kurang (1)')
+                                    ->icon('heroicon-o-x-circle')
+                                    ->schema([
+                                        Forms\Components\RichEditor::make('kriteria_kurang')
+                                            ->label('Kriteria Kurang (Skor 1)')
+                                            ->placeholder('Jelaskan kriteria untuk mendapat skor 1 (Kurang)...')
+                                            ->helperText('Kriteria untuk penilaian dengan skor minimal')
+                                            ->toolbarButtons([
+                                                'bold',
+                                                'italic',
+                                                'underline',
+                                                'bulletList',
+                                                'orderedList',
+                                            ])
+                                            ->columnSpanFull(),
+                                    ]),
+                            ])
+                            ->columnSpanFull(),
 
                         Forms\Components\RichEditor::make('kriteria_penilaian')
-                            ->label('Kriteria Penilaian')
-                            ->placeholder('Tuliskan kriteria penilaian detail untuk setiap skor...')
-                            ->helperText('Kriteria penilaian untuk setiap level skor (0-4)')
+                            ->label('Kriteria Penilaian (Legacy)')
+                            ->placeholder('Kriteria penilaian lama (opsional)...')
+                            ->helperText('Field legacy - gunakan tab kriteria di atas untuk input yang lebih detail')
                             ->columnSpanFull()
                             ->toolbarButtons([
                                 'bold',
@@ -84,7 +201,8 @@ class AssessmentIndicatorResource extends Resource
                                 'orderedList',
                                 'h2',
                                 'h3',
-                            ]),
+                            ])
+                            ->hidden(fn ($context) => $context === 'create'),
                     ])
                     ->columns(1),
 
@@ -195,6 +313,53 @@ class AssessmentIndicatorResource extends Resource
                     ->copyMessage('Nama indikator disalin!')
                     ->copyMessageDuration(1500),
 
+                Tables\Columns\TextColumn::make('kegiatan')
+                    ->label('Kegiatan')
+                    ->limit(40)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 40 ? strip_tags($state) : null;
+                    })
+                    ->html()
+                    ->placeholder('Belum ada kegiatan')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('sumber_data')
+                    ->label('Sumber Data')
+                    ->limit(30)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 30 ? strip_tags($state) : null;
+                    })
+                    ->html()
+                    ->placeholder('Belum ada sumber data')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('keterangan')
+                    ->label('Keterangan')
+                    ->limit(30)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 30 ? $state : null;
+                    })
+                    ->placeholder('Belum ada keterangan')
+                    ->toggleable(),
+
+                Tables\Columns\IconColumn::make('kriteria_lengkap')
+                    ->label('Kriteria Lengkap')
+                    ->getStateUsing(function ($record): bool {
+                        return $record->kriteria_lengkap;
+                    })
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->tooltip(fn ($record): string => $record->kriteria_lengkap ?
+                        'Semua kriteria telah diisi' :
+                        'Kriteria belum lengkap'
+                    ),
+
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
                     ->limit(50)
@@ -266,10 +431,12 @@ class AssessmentIndicatorResource extends Resource
                 Tables\Filters\SelectFilter::make('komponen')
                     ->label('Komponen Utama')
                     ->options([
-                        'SISWA' => 'SISWA',
-                        'GURU' => 'GURU',
-                        'KINERJA GURU' => 'KINERJA GURU',
-                        'MANAGEMENT KEPALA SEKOLAH' => 'KEPALA SEKOLAH',
+                        'KEPALA SEKOLAH' => 'KEPALA SEKOLAH',
+                        'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'PELANGGAN',
+                        'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'PENGUKURAN & ANALISIS',
+                        'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'TENAGA KERJA',
+                        'PROSES' => 'PROSES',
+                        'HASIL PRODUK DAN/ATAU LAYANAN' => 'HASIL PRODUK',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
@@ -287,6 +454,32 @@ class AssessmentIndicatorResource extends Resource
                     ->trueLabel('Aktif')
                     ->falseLabel('Tidak Aktif')
                     ->native(false),
+
+                Tables\Filters\TernaryFilter::make('kriteria_lengkap')
+                    ->label('Kriteria Lengkap')
+                    ->boolean()
+                    ->trueLabel('Lengkap')
+                    ->falseLabel('Belum Lengkap')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereNotNull('kriteria_sangat_baik')
+                            ->whereNotNull('kriteria_baik')
+                            ->whereNotNull('kriteria_cukup')
+                            ->whereNotNull('kriteria_kurang')
+                            ->where('kriteria_sangat_baik', '!=', '')
+                            ->where('kriteria_baik', '!=', '')
+                            ->where('kriteria_cukup', '!=', '')
+                            ->where('kriteria_kurang', '!=', ''),
+                        false: fn (Builder $query) => $query->where(function ($q) {
+                            $q->whereNull('kriteria_sangat_baik')
+                                ->orWhereNull('kriteria_baik')
+                                ->orWhereNull('kriteria_cukup')
+                                ->orWhereNull('kriteria_kurang')
+                                ->orWhere('kriteria_sangat_baik', '')
+                                ->orWhere('kriteria_baik', '')
+                                ->orWhere('kriteria_cukup', '')
+                                ->orWhere('kriteria_kurang', '');
+                        })
+                    ),
 
                 Tables\Filters\Filter::make('bobot_tinggi')
                     ->label('Bobot Tinggi (≥10%)')

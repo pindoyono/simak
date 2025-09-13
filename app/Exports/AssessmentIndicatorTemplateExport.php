@@ -44,13 +44,21 @@ class TemplateSheet implements FromCollection, WithHeadings, WithStyles, WithCol
             'skor_maksimal',
             'urutan',
             'is_active',
+            // Kolom-kolom baru
+            'kegiatan',
+            'sumber_data',
+            'keterangan',
+            'kriteria_sangat_baik',
+            'kriteria_baik',
+            'kriteria_cukup',
+            'kriteria_kurang',
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        // Style untuk header
-        $sheet->getStyle('A1:H1')->applyFromArray([
+        // Style untuk header - sekarang 15 kolom (A1:O1)
+        $sheet->getStyle('A1:O1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -71,9 +79,10 @@ class TemplateSheet implements FromCollection, WithHeadings, WithStyles, WithCol
             ],
         ]);
 
-        // Style untuk data
+        // Style untuk data - sekarang 15 kolom (A2:O{lastRow})
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle("A2:H{$lastRow}")->applyFromArray([
+        if ($lastRow < 2) $lastRow = 100; // Default untuk template kosong
+        $sheet->getStyle("A2:O{$lastRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -108,6 +117,14 @@ class TemplateSheet implements FromCollection, WithHeadings, WithStyles, WithCol
             'F' => 12, // skor_maksimal
             'G' => 10, // urutan
             'H' => 12, // is_active
+            // Kolom-kolom baru
+            'I' => 40, // kegiatan
+            'J' => 40, // sumber_data
+            'K' => 40, // keterangan
+            'L' => 40, // kriteria_sangat_baik
+            'M' => 40, // kriteria_baik
+            'N' => 40, // kriteria_cukup
+            'O' => 40, // kriteria_kurang
         ];
     }
 
