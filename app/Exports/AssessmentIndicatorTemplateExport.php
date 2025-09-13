@@ -49,7 +49,7 @@ class TemplateSheet implements FromCollection, WithHeadings, WithStyles, WithCol
                 'Skor 1 (KURANG): Implementasi kurang efektif dengan banyak hambatan dan hasil yang belum optimal. Diperlukan perbaikan menyeluruh dalam semua aspek.'
             ],
             [
-                52, // category_id (valid ID from existing categories) 
+                52, // category_id (valid ID from existing categories)
                 '1.2.1 Contoh Indikator Kedua',
                 'Deskripsi untuk indikator kedua yang fokus pada aspek berbeda',
                 20.00,
