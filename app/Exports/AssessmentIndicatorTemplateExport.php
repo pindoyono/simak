@@ -29,8 +29,43 @@ class TemplateSheet implements FromCollection, WithHeadings, WithStyles, WithCol
 {
     public function collection()
     {
-        // Return empty collection for clean template
-        return collect([]);
+        // Return sample data for template
+        return collect([
+            [
+                51, // category_id (valid ID from existing categories)
+                '1.1.1 Contoh Indikator Pertama',
+                'Deskripsi detail untuk indikator pertama yang akan dinilai dalam assessment',
+                15.50,
+                'Kriteria penilaian untuk indikator ini mencakup aspek kualitas dan kuantitas',
+                4,
+                1,
+                1,
+                'Kegiatan observasi dan dokumentasi untuk mengukur pencapaian indikator',
+                'Dokumen, laporan, dan hasil observasi langsung di lapangan',
+                'Catatan tambahan terkait pelaksanaan penilaian indikator ini',
+                'Skor 4 (SANGAT BAIK): Implementasi sangat efektif dengan hasil yang sangat memuaskan. Semua aspek telah terlaksana dengan sangat baik, mencakup perencanaan yang matang, pelaksanaan yang sistematis, evaluasi yang komprehensif, dan tindak lanjut yang berkelanjutan.',
+                'Skor 3 (BAIK): Implementasi efektif dengan hasil yang memuaskan. Sebagian besar aspek telah terlaksana dengan baik, meskipun masih terdapat beberapa area yang perlu diperbaiki atau disempurnakan.',
+                'Skor 2 (CUKUP): Implementasi cukup efektif dengan hasil yang memadai namun masih terdapat banyak aspek yang perlu ditingkatkan. Perencanaan sudah ada tetapi belum detail.',
+                'Skor 1 (KURANG): Implementasi kurang efektif dengan banyak hambatan dan hasil yang belum optimal. Diperlukan perbaikan menyeluruh dalam semua aspek.'
+            ],
+            [
+                52, // category_id (valid ID from existing categories) 
+                '1.2.1 Contoh Indikator Kedua',
+                'Deskripsi untuk indikator kedua yang fokus pada aspek berbeda',
+                20.00,
+                'Kriteria penilaian yang mengukur efektivitas dan efisiensi pelaksanaan',
+                4,
+                2,
+                1,
+                'Kegiatan wawancara dan survey untuk mendapatkan data komprehensif',
+                'Hasil survey, wawancara, dan analisis data statistik',
+                'Perhatian khusus pada konsistensi data dan validitas informasi',
+                'Skor 4 (SANGAT BAIK): Implementasi sangat efektif dengan hasil optimal. Pencapaian melebihi target dengan bukti-bukti yang sangat kuat dan terintegrasi dengan baik dalam sistem organisasi.',
+                'Skor 3 (BAIK): Implementasi efektif dengan hasil yang memuaskan. Target tercapai dengan baik meskipun masih ada ruang untuk peningkatan dalam beberapa aspek tertentu.',
+                'Skor 2 (CUKUP): Implementasi cukup efektif dengan beberapa kendala. Target tercapai namun dengan usaha ekstra dan masih banyak aspek yang perlu diperbaiki.',
+                'Skor 1 (KURANG): Implementasi kurang efektif dengan banyak hambatan. Target tidak tercapai optimal dan memerlukan perbaikan sistematis dalam berbagai aspek.'
+            ]
+        ]);
     }
 
     public function headings(): array

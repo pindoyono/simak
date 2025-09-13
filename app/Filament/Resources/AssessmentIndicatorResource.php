@@ -591,12 +591,40 @@ class AssessmentIndicatorResource extends Resource
                             $import = new AssessmentIndicatorImport();
                             Excel::import($import, $fullPath);
 
-                            $summary = "✅ Import berhasil!\n";
-                            $summary .= "Total indikator asesmen berhasil diimport";
+                            $importedCount = $import->getImportedCount();
+                            $skippedCount = $import->getSkippedCount();
+                            $failures = $import->failures();
+                            $errors = $import->errors();
+
+                            // Check total indicators in database
+                            $totalIndicators = \App\Models\AssessmentIndicator::count();
+
+                            $summary = "📊 IMPORT RESULTS:\n";
+                            $summary .= "- Imported: {$importedCount} rows\n";
+                            $summary .= "- Skipped: {$skippedCount} rows\n";
+                            if (!empty($failures)) {
+                                $summary .= "- Failed: " . count($failures) . " rows\n";
+                                foreach ($failures as $failure) {
+                                    $summary .= "  Row {$failure->row()}: " . implode(', ', $failure->errors()) . "\n";
+                                }
+                            }
+                            if (!empty($errors)) {
+                                $summary .= "- Errors: " . count($errors) . " errors\n";
+                                foreach ($errors as $error) {
+                                    $summary .= "  Error: " . $error->getMessage() . "\n";
+                                }
+                            }
+                            $summary .= "- Database total: {$totalIndicators} indicators\n";
+
+                            // Sample some data to verify
+                            $sampleData = \App\Models\AssessmentIndicator::latest()->take(2)->get(['id', 'nama_indikator']);
+                            if ($sampleData->count() > 0) {
+                                $summary .= "✅ Sample data: " . $sampleData->pluck('nama_indikator')->implode(', ');
+                            }
 
                             Notification::make()
                                 ->success()
-                                ->title('Import Berhasil')
+                                ->title(count($failures) > 0 ? 'Import Completed with Issues' : 'Import Berhasil')
                                 ->body($summary)
                                 ->send();
 
