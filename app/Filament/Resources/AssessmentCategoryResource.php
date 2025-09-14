@@ -13,6 +13,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextInputColumn;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -155,13 +156,29 @@ class AssessmentCategoryResource extends Resource
                     ->placeholder('Belum ada deskripsi')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('bobot_penilaian')
+                Tables\Columns\TextInputColumn::make('bobot_penilaian')
                     ->label('Bobot (%)')
+                    ->type('number')
+                    ->step(0.01)
+                    ->rules(['required', 'numeric', 'min:0', 'max:100'])
                     ->sortable()
                     ->alignCenter()
-                    ->badge()
-                    ->color('info')
-                    ->formatStateUsing(fn ($state) => number_format($state, 2) . '%'),
+                    ->afterStateUpdated(function ($record, $state) {
+                        // Validate that total weights don't exceed 100%
+                        $totalWeight = \App\Models\AssessmentCategory::where('id', '!=', $record->id)->sum('bobot_penilaian') + $state;
+                        
+                        if ($totalWeight > 100) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Peringatan!')
+                                ->body("Total bobot semua kategori tidak boleh melebihi 100%. Total saat ini: {$totalWeight}%")
+                                ->warning()
+                                ->send();
+                        }
+                    })
+                    ->placeholder('0.00')
+                    ->extraInputAttributes([
+                        'style' => 'width: 80px;'
+                    ]),
 
                 Tables\Columns\TextColumn::make('urutan')
                     ->label('Urutan')
@@ -453,7 +470,15 @@ class AssessmentCategoryResource extends Resource
                         ->modalSubmitActionLabel('Ya, Hapus Semua'),
                 ]),
             ])
-            ->defaultSort('urutan', 'asc');
+            ->deferLoading()
+            ->persistSortInSession()
+            ->persistSearchInSession()
+            ->persistFiltersInSession()
+            ->striped()
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
+            ->defaultSort('urutan', 'asc')
+            ->poll('30s'); // Auto refresh setiap 30 detik untuk melihat perubahan real-time
     }
 
     public static function getRelations(): array

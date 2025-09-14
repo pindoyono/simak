@@ -446,15 +446,16 @@ class AssessmentWizardV3 extends Page
     {
         if (empty($scores)) return 0;
 
-        // Optimize: Get all indicators at once instead of individual queries
+        // Get all indicators with their categories for category-based calculation
         $indicatorIds = array_keys($scores);
         $indicators = AssessmentIndicator::whereIn('id', $indicatorIds)
-            ->select('id', 'skor_maksimal', 'bobot_indikator')
+            ->with('category')
+            ->select('id', 'skor_maksimal', 'assessment_category_id')
             ->get()
             ->keyBy('id');
 
-        $totalWeightedScore = 0;
-        $totalWeight = 0;
+        // Group scores by category
+        $categoryScores = [];
 
         foreach ($scores as $indicatorId => $scoreData) {
             if (empty($scoreData['skor']) || !is_numeric($scoreData['skor'])) {
@@ -462,20 +463,43 @@ class AssessmentWizardV3 extends Page
             }
 
             $indicator = $indicators->get($indicatorId);
-            if (!$indicator) continue;
+            if (!$indicator || !$indicator->category) continue;
 
+            $categoryId = $indicator->assessment_category_id;
             $score = (float) $scoreData['skor'];
             $maxScore = $indicator->skor_maksimal ?? 4;
-            $weight = $indicator->bobot_indikator ?? 1;
 
             // Normalize score to 4-point scale
             $normalizedScore = $maxScore > 0 ? ($score / $maxScore) * 4 : 0;
 
-            $totalWeightedScore += $normalizedScore * $weight;
-            $totalWeight += $weight;
+            if (!isset($categoryScores[$categoryId])) {
+                $categoryScores[$categoryId] = [
+                    'total_score' => 0,
+                    'count' => 0,
+                    'bobot_penilaian' => $indicator->category->bobot_penilaian ?? 0
+                ];
+            }
+
+            $categoryScores[$categoryId]['total_score'] += $normalizedScore;
+            $categoryScores[$categoryId]['count']++;
         }
 
-        return $totalWeight > 0 ? round($totalWeightedScore / $totalWeight, 2) : 0;
+        // Calculate weighted total based on category weights
+        $totalWeightedScore = 0;
+
+        foreach ($categoryScores as $categoryData) {
+            if ($categoryData['count'] > 0) {
+                // Calculate average score for this category
+                $categoryAverage = $categoryData['total_score'] / $categoryData['count'];
+
+                // Apply category weight (bobot_penilaian)
+                $weightedCategoryScore = $categoryAverage * ($categoryData['bobot_penilaian'] / 100);
+
+                $totalWeightedScore += $weightedCategoryScore;
+            }
+        }
+
+        return round($totalWeightedScore, 2);
     }
 
     protected function calculateGrade(float $score): string

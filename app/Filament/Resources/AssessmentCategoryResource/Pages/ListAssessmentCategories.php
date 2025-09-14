@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AssessmentCategoryResource\Pages;
 
 use App\Filament\Resources\AssessmentCategoryResource;
 use App\Models\AssessmentCategory;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
@@ -16,7 +17,33 @@ class ListAssessmentCategories extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        $totalWeight = AssessmentCategory::sum('bobot_penilaian');
+        $activeCategories = AssessmentCategory::where('is_active', true)->count();
+        $totalCategories = AssessmentCategory::count();
+        
+        $weightColor = match (true) {
+            $totalWeight > 100 => 'danger',
+            $totalWeight == 100 => 'success', 
+            $totalWeight >= 90 => 'warning',
+            default => 'info'
+        };
+        
+        $weightMessage = match (true) {
+            $totalWeight > 100 => 'Total bobot melebihi 100%! Perlu penyesuaian.',
+            $totalWeight == 100 => 'Perfect! Total bobot tepat 100%.',
+            $totalWeight >= 90 => 'Hampir sempurna. Total bobot: ' . number_format($totalWeight, 1) . '%',
+            default => 'Total bobot masih ' . number_format($totalWeight, 1) . '%. Bisa ditambah.'
+        };
+
         return [
+            Actions\Action::make('weightStatus')
+                ->label('Total Bobot: ' . number_format($totalWeight, 1) . '%')
+                ->icon($totalWeight > 100 ? 'heroicon-o-exclamation-triangle' : 'heroicon-o-scale')
+                ->color($weightColor)
+                ->tooltip($weightMessage)
+                ->disabled()
+                ->badge($activeCategories . '/' . $totalCategories . ' Aktif'),
+
             Actions\Action::make('reorderComponents')
                 ->label('Atur Urutan Komponen')
                 ->icon('heroicon-o-adjustments-horizontal')

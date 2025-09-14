@@ -60,8 +60,22 @@ class AssessmentScore extends Model
     public function getSkorBerbobotAttribute(): float
     {
         $indicator = $this->assessmentIndicator;
-        $bobot = $indicator?->bobot_indikator ?? 0;
-        return round(($this->persentase * $bobot) / 100, 2);
+        if (!$indicator) {
+            return 0;
+        }
+
+        // Load category if not already loaded
+        if (!$indicator->relationLoaded('category')) {
+            $indicator->load('category');
+        }
+
+        if (!$indicator->category) {
+            return 0;
+        }
+
+        // Use category weight instead of indicator weight
+        $bobotKategori = $indicator->category->bobot_penilaian ?? 0;
+        return round(($this->persentase * $bobotKategori) / 100, 2);
     }
 
     public function getGradeAttribute(): string

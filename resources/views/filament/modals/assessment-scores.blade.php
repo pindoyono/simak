@@ -216,6 +216,19 @@
                                 @php
                                     $categoryTotal = $scores->sum('skor');
                                     $categoryAverage = $scores->avg('skor');
+
+                                    // Get category weight from the first score's indicator's category
+                                    $firstScore = $scores->first();
+                                    $categoryWeight =
+                                        $firstScore &&
+                                        $firstScore->assessmentIndicator &&
+                                        $firstScore->assessmentIndicator->category
+                                            ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                                            : 0;
+
+                                    // Calculate weighted category score
+                                    $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
+
                                     $categoryGrade = match (true) {
                                         $categoryAverage >= 3.5 => 'Sangat Baik',
                                         $categoryAverage >= 2.5 => 'Baik',
@@ -232,10 +245,17 @@
                                         default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
                                     };
                                 @endphp
-                                <span class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                    {{ number_format($categoryTotal, 2) }} (Rata-rata:
-                                    {{ number_format($categoryAverage, 2) }})
-                                </span>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                        {{ number_format($categoryTotal, 2) }} (Rata-rata:
+                                        {{ number_format($categoryAverage, 2) }})
+                                    </span>
+                                    <br>
+                                    <span class="text-xs text-gray-600 dark:text-gray-400">
+                                        Bobot: {{ number_format($categoryWeight, 1) }}% |
+                                        Skor Berbobot: {{ number_format($weightedCategoryScore, 2) }}
+                                    </span>
+                                </div>
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $categoryGradeColor }}">
                                     {{ $categoryGrade }}
