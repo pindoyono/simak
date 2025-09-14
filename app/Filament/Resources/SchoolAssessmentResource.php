@@ -257,8 +257,7 @@ class SchoolAssessmentResource extends Resource
                     Tables\Actions\Action::make('export_excel')
                         ->label('Export Excel')
                         ->icon('heroicon-o-table-cells')
-                        ->color('success')
-                        ->url(fn ($record) => route('assessment.export-excel', $record->id)),
+                        ->color('success'),
 
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),

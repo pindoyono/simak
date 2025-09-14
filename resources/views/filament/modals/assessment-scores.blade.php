@@ -13,7 +13,7 @@
                     </svg>
                     Export PDF
                 </a>
-                <a href="{{ route('assessment.export-excel', $schoolAssessment->id) }}"
+                <a href=""
                     class="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
