@@ -36,21 +36,98 @@
                                     </p>
                                 @endif
                             </div>
-                            <div class="ml-4 flex-shrink-0">
-                                <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                    Max: {{ $indicator->skor_maksimal ?? 4 }}
-                                </span>
-                                @if ($indicator->bobot_indikator && $indicator->bobot_indikator != 1)
-                                    <span
-                                        class="ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                        Bobot: {{ $indicator->bobot_indikator }}
-                                    </span>
-                                @endif
-                            </div>
+                            <!-- Max and Bobot removed as requested -->
                         </div>
 
-                        @if ($indicator->kriteria_penilaian)
+                        @php
+                            // Check for new detailed criteria fields
+                            $hasDetailedCriteria =
+                                $indicator->kriteria_sangat_baik ||
+                                $indicator->kriteria_baik ||
+                                $indicator->kriteria_cukup ||
+                                $indicator->kriteria_kurang;
+                        @endphp
+
+                        @if ($hasDetailedCriteria)
+                            {{-- New detailed criteria format --}}
+                            <div class="mt-3">
+                                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                                    Kriteria Penilaian:
+                                </h4>
+                                <div class="space-y-3">
+                                    @if ($indicator->kriteria_sangat_baik)
+                                        <div
+                                            class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                            <span
+                                                class="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full flex items-center justify-center text-sm font-bold">
+                                                4
+                                            </span>
+                                            <div>
+                                                <div
+                                                    class="font-medium text-green-800 dark:text-green-200 text-sm mb-1">
+                                                    Sangat Baik</div>
+                                                <div class="text-sm text-green-700 dark:text-green-300">
+                                                    {!! nl2br(e($indicator->kriteria_sangat_baik)) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($indicator->kriteria_baik)
+                                        <div
+                                            class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                            <span
+                                                class="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full flex items-center justify-center text-sm font-bold">
+                                                3
+                                            </span>
+                                            <div>
+                                                <div class="font-medium text-blue-800 dark:text-blue-200 text-sm mb-1">
+                                                    Baik</div>
+                                                <div class="text-sm text-blue-700 dark:text-blue-300">
+                                                    {!! nl2br(e($indicator->kriteria_baik)) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($indicator->kriteria_cukup)
+                                        <div
+                                            class="flex items-start space-x-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                            <span
+                                                class="flex-shrink-0 w-8 h-8 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-full flex items-center justify-center text-sm font-bold">
+                                                2
+                                            </span>
+                                            <div>
+                                                <div
+                                                    class="font-medium text-yellow-800 dark:text-yellow-200 text-sm mb-1">
+                                                    Cukup</div>
+                                                <div class="text-sm text-yellow-700 dark:text-yellow-300">
+                                                    {!! nl2br(e($indicator->kriteria_cukup)) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($indicator->kriteria_kurang)
+                                        <div
+                                            class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                                            <span
+                                                class="flex-shrink-0 w-8 h-8 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full flex items-center justify-center text-sm font-bold">
+                                                1
+                                            </span>
+                                            <div>
+                                                <div class="font-medium text-red-800 dark:text-red-200 text-sm mb-1">
+                                                    Kurang</div>
+                                                <div class="text-sm text-red-700 dark:text-red-300">
+                                                    {!! nl2br(e($indicator->kriteria_kurang)) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @elseif ($indicator->kriteria_penilaian)
+                            {{-- Legacy criteria format --}}
                             <div class="mt-3">
                                 <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                                     Kriteria Penilaian:

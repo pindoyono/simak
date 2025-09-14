@@ -14,37 +14,19 @@ use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
-use Maatwebsite\Excel\Concerns\SkipsOnError;
-use Maatwebsite\Excel\Concerns\SkipsErrors;
-use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Illuminate\Validation\Rule;
 
-class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, SkipsEmptyRows, SkipsOnFailure, SkipsOnError, WithMultipleSheets
+class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, SkipsEmptyRows, SkipsOnFailure
 {
-    use Importable, SkipsFailures, SkipsErrors;
+    use Importable, SkipsFailures;
 
     private $importedCount = 0;
     private $skippedCount = 0;
 
-    public function sheets(): array
-    {
-        return [
-            0 => $this, // Only process the first sheet (Template Import)
-        ];
-    }
-
     public function model(array $row)
     {
-        Log::info('Processing row: ', $row);
-
-        // Skip baris kosong atau yang hanya berisi null values
-        $filteredRow = array_filter($row, function($value) {
-            return $value !== null && $value !== '';
-        });
-
-        if (empty($filteredRow) || !isset($row['category_id']) || !isset($row['nama_indikator'])) {
-            Log::info('Skipping empty or incomplete row');
+        // Skip baris kosong
+        if (empty(array_filter($row))) {
             $this->skippedCount++;
             return null;
         }
@@ -57,26 +39,27 @@ class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidati
             return null;
         }
 
-        Log::info('Creating indicator with category ID: ' . $assessmentCategory->id);
         $this->importedCount++;
 
         return new AssessmentIndicator([
             'assessment_category_id' => $assessmentCategory->id,
-            'nama_indikator' => (string) ($row['nama_indikator'] ?? ''),
-            'deskripsi' => !empty($row['deskripsi']) ? (string) $row['deskripsi'] : null,
+            'nama_indikator' => $row['nama_indikator'],
+            'deskripsi' => $row['deskripsi'] ?? null,
             'bobot_indikator' => (float) ($row['bobot_indikator'] ?? 0),
-            'kriteria_penilaian' => !empty($row['kriteria_penilaian']) ? (string) $row['kriteria_penilaian'] : null,
+            'kriteria_penilaian' => $row['kriteria_penilaian'] ?? null,
             'skor_maksimal' => (int) ($row['skor_maksimal'] ?? 4),
             'urutan' => (int) ($row['urutan'] ?? 1),
+            'is_active' => isset($row['is_active']) ? filter_var($row['is_active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true : true,
+            // Kolom-kolom baru
+            'kegiatan' => $row['kegiatan'] ?? null,
+            'sumber_data' => $row['sumber_data'] ?? null,
+            'keterangan' => $row['keterangan'] ?? null,
+            'kriteria_sangat_baik' => $row['kriteria_sangat_baik'] ?? null,
+            'kriteria_baik' => $row['kriteria_baik'] ?? null,
+            'kriteria_cukup' => $row['kriteria_cukup'] ?? null,
+            'kriteria_kurang' => $row['kriteria_kurang'] ?? null,
+            'urutan' => (int) ($row['urutan'] ?? 0),
             'is_active' => $this->parseBoolean($row['is_active'] ?? true),
-            // Kolom-kolom baru dengan explicit string casting
-            'kegiatan' => !empty($row['kegiatan']) ? (string) $row['kegiatan'] : null,
-            'sumber_data' => !empty($row['sumber_data']) ? (string) $row['sumber_data'] : null,
-            'keterangan' => !empty($row['keterangan']) ? (string) $row['keterangan'] : null,
-            'kriteria_sangat_baik' => !empty($row['kriteria_sangat_baik']) ? (string) $row['kriteria_sangat_baik'] : null,
-            'kriteria_baik' => !empty($row['kriteria_baik']) ? (string) $row['kriteria_baik'] : null,
-            'kriteria_cukup' => !empty($row['kriteria_cukup']) ? (string) $row['kriteria_cukup'] : null,
-            'kriteria_kurang' => !empty($row['kriteria_kurang']) ? (string) $row['kriteria_kurang'] : null,
         ]);
     }
 
@@ -85,8 +68,8 @@ class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidati
         $assessmentCategoryIds = AssessmentCategory::pluck('id')->toArray();
 
         return [
-            'category_id' => ['nullable', 'numeric', Rule::in($assessmentCategoryIds)],
-            'nama_indikator' => 'nullable|string',
+            'category_id' => ['required', 'numeric', Rule::in($assessmentCategoryIds)],
+            'nama_indikator' => 'required|string',
             'deskripsi' => 'nullable|string',
             'bobot_indikator' => 'nullable|numeric|min:0|max:999.99',
             'kriteria_penilaian' => 'nullable|string',
@@ -102,20 +85,6 @@ class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidati
             'kriteria_cukup' => 'nullable|string',
             'kriteria_kurang' => 'nullable|string',
         ];
-    }
-
-    public function prepareForValidation($data, $index)
-    {
-        // Skip validation for empty rows
-        $filteredData = array_filter($data, function($value) {
-            return $value !== null && $value !== '';
-        });
-
-        if (empty($filteredData)) {
-            return [];
-        }
-
-        return $data;
     }
 
     public function customValidationMessages(): array
@@ -163,19 +132,5 @@ class AssessmentIndicatorImport implements ToModel, WithHeadingRow, WithValidati
 
         $value = strtolower(trim($value));
         return in_array($value, ['1', 'true', 'ya', 'aktif', '✓'], true);
-    }
-
-    public function onFailure(\Maatwebsite\Excel\Validators\Failure ...$failures)
-    {
-        Log::error('Import failures detected:');
-        foreach ($failures as $failure) {
-            Log::error('Row: ' . $failure->row() . ', Errors: ' . implode(', ', $failure->errors()));
-        }
-    }
-
-    public function onError(\Throwable $error)
-    {
-        Log::error('Import error: ' . $error->getMessage());
-        Log::error('Error trace: ' . $error->getTraceAsString());
     }
 }
