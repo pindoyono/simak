@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SchoolAssessment;
 use App\Models\AssessmentScore;
+use App\Exports\AssessmentDetailExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 
 class AssessmentExportController extends Controller
@@ -75,6 +77,21 @@ class AssessmentExportController extends Controller
         } catch (\Exception $e) {
             Log::error('PDF Export Error: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to generate PDF: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function exportExcel($schoolAssessmentId)
+    {
+        try {
+            $schoolAssessment = SchoolAssessment::with(['school', 'period', 'assessor'])->findOrFail($schoolAssessmentId);
+            
+            $filename = 'SIMAK-PM_Assessment_Report_' . str_replace(' ', '_', $schoolAssessment->school->nama_sekolah) . '_' . date('Y-m-d') . '.xlsx';
+
+            return Excel::download(new AssessmentDetailExport($schoolAssessmentId), $filename);
+
+        } catch (\Exception $e) {
+            Log::error('Excel Export Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to generate Excel: ' . $e->getMessage()], 500);
         }
     }
 }

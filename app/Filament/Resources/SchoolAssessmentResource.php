@@ -254,6 +254,12 @@ class SchoolAssessmentResource extends Resource
                         ->openUrlInNewTab()
                         ->url(fn ($record) => route('assessment.export-pdf', $record->id)),
 
+                    Tables\Actions\Action::make('export_excel')
+                        ->label('Export Excel')
+                        ->icon('heroicon-o-table-cells')
+                        ->color('success')
+                        ->url(fn ($record) => route('assessment.export-excel', $record->id)),
+
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),

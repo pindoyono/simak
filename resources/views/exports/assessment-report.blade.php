@@ -334,77 +334,81 @@
         {{-- Weighted Score Breakdown by Component for PDF --}}
         <div style="margin: 20px 0;">
             <h3 style="color: #333; margin-bottom: 15px; font-size: 16px;">📊 Breakdown Skor Berbobot Per Komponen</h3>
-            
+
             @php
                 // Group categories by component
                 $componentGroups = [];
                 $componentTotals = [];
-                
+
                 foreach ($assessmentScores as $categoryName => $scores) {
                     if ($scores->isNotEmpty()) {
                         $firstScore = $scores->first();
-                        $categoryComponent = $firstScore && 
-                                           $firstScore->assessmentIndicator && 
-                                           $firstScore->assessmentIndicator->category
-                            ? $firstScore->assessmentIndicator->category->komponen
-                            : 'Unknown';
-                        
-                        $categoryWeight = $firstScore && 
-                                        $firstScore->assessmentIndicator && 
-                                        $firstScore->assessmentIndicator->category
-                            ? $firstScore->assessmentIndicator->category->bobot_penilaian
-                            : 0;
-                        
+                        $categoryComponent =
+                            $firstScore &&
+                            $firstScore->assessmentIndicator &&
+                            $firstScore->assessmentIndicator->category
+                                ? $firstScore->assessmentIndicator->category->komponen
+                                : 'Unknown';
+
+                        $categoryWeight =
+                            $firstScore &&
+                            $firstScore->assessmentIndicator &&
+                            $firstScore->assessmentIndicator->category
+                                ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                                : 0;
+
                         $categoryAverage = $scores->avg('skor');
                         $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
-                        
+
                         // Map components to display names
-                        $componentDisplayName = match($categoryComponent) {
+                        $componentDisplayName = match ($categoryComponent) {
                             'MANAGEMENT KEPALA SEKOLAH' => 'Kepemimpinan Kepala Sekolah',
-                            'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'Pelanggan (Siswa, Orang Tua, dan Masyarakat)',
-                            'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'Pengukuran, Analisis, dan Manajemen Pengetahuan',
-                            'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'Tenaga Kerja (Tenaga Pendidik dan Kependidikan)',
+                            'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)'
+                                => 'Pelanggan (Siswa, Orang Tua, dan Masyarakat)',
+                            'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN'
+                                => 'Pengukuran, Analisis, dan Manajemen Pengetahuan',
+                            'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)'
+                                => 'Tenaga Kerja (Tenaga Pendidik dan Kependidikan)',
                             'PROSES' => 'Proses (Operasional)',
                             'SISWA' => 'Siswa',
                             'GURU' => 'Guru',
-                            'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN' => 'Kinerja Guru dalam Mengelola Proses Pembelajaran',
+                            'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN'
+                                => 'Kinerja Guru dalam Mengelola Proses Pembelajaran',
                             'HASIL PRODUK DAN/ATAU LAYANAN' => 'Hasil Produk dan/atau Layanan',
-                            default => $categoryComponent
+                            default => $categoryComponent,
                         };
-                        
+
                         if (!isset($componentGroups[$componentDisplayName])) {
                             $componentGroups[$componentDisplayName] = [];
                             $componentTotals[$componentDisplayName] = [
                                 'total_weight' => 0,
                                 'total_weighted_score' => 0,
                                 'category_count' => 0,
-                                'total_avg_score' => 0
+                                'total_avg_score' => 0,
                             ];
                         }
-                        
+
                         $componentGroups[$componentDisplayName][] = [
                             'category_name' => $categoryName,
                             'average' => $categoryAverage,
                             'weight' => $categoryWeight,
                             'weighted_score' => $weightedCategoryScore,
-                            'indicator_count' => $scores->count()
+                            'indicator_count' => $scores->count(),
                         ];
-                        
+
                         $componentTotals[$componentDisplayName]['total_weight'] += $categoryWeight;
                         $componentTotals[$componentDisplayName]['total_weighted_score'] += $weightedCategoryScore;
                         $componentTotals[$componentDisplayName]['category_count']++;
                         $componentTotals[$componentDisplayName]['total_avg_score'] += $categoryAverage;
                     }
                 }
-                
+
                 // Calculate component averages
                 foreach ($componentTotals as $component => $totals) {
-                    $componentTotals[$component]['avg_score'] = $totals['category_count'] > 0 
-                        ? $totals['total_avg_score'] / $totals['category_count'] 
-                        : 0;
-                    $componentTotals[$component]['contribution'] = $totalWeightedScore > 0 
-                        ? ($totals['total_weighted_score'] / $totalWeightedScore) * 100 
-                        : 0;
+                    $componentTotals[$component]['avg_score'] =
+                        $totals['category_count'] > 0 ? $totals['total_avg_score'] / $totals['category_count'] : 0;
+                    $componentTotals[$component]['contribution'] =
+                        $totalWeightedScore > 0 ? ($totals['total_weighted_score'] / $totalWeightedScore) * 100 : 0;
                 }
             @endphp
 
@@ -412,11 +416,16 @@
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px;">
                 <thead>
                     <tr style="background-color: #e3f2fd;">
-                        <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">Komponen</th>
-                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Jumlah Kategori</th>
-                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Bobot Total (%)</th>
-                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Skor Berbobot</th>
-                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Kontribusi (%)</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">Komponen
+                        </th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Jumlah
+                            Kategori</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Bobot
+                            Total (%)</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Skor
+                            Berbobot</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">
+                            Kontribusi (%)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -429,11 +438,13 @@
                                 {{ $data['category_count'] }}
                             </td>
                             <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
-                                <span style="background-color: #e3f2fd; padding: 3px 8px; border-radius: 12px; font-weight: bold;">
+                                <span
+                                    style="background-color: #e3f2fd; padding: 3px 8px; border-radius: 12px; font-weight: bold;">
                                     {{ number_format($data['total_weight'], 1) }}%
                                 </span>
                             </td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center; color: #1976d2; font-weight: bold; font-size: 14px;">
+                            <td
+                                style="border: 1px solid #ddd; padding: 8px; text-align: center; color: #1976d2; font-weight: bold; font-size: 14px;">
                                 {{ number_format($data['total_weighted_score'], 3) }}
                             </td>
                             <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
@@ -447,7 +458,8 @@
                         <td style="border: 1px solid #ddd; padding: 10px; text-align: left;" colspan="3">
                             <strong>TOTAL SKOR BERBOBOT</strong>
                         </td>
-                        <td style="border: 1px solid #ddd; padding: 10px; text-align: center; color: #1565c0; font-size: 16px;">
+                        <td
+                            style="border: 1px solid #ddd; padding: 10px; text-align: center; color: #1565c0; font-size: 16px;">
                             <strong>{{ number_format($totalWeightedScore, 3) }}</strong>
                         </td>
                         <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">
@@ -462,14 +474,16 @@
                 @php
                     $componentData = $componentTotals[$componentName];
                 @endphp
-                <div class="no-break" style="background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; padding: 15px;">
+                <div class="no-break"
+                    style="background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; padding: 15px;">
                     <h4 style="color: #333; margin-top: 0; margin-bottom: 10px; font-size: 14px; font-weight: bold;">
                         {{ $componentName }}
                         <span style="color: #666; font-size: 12px; font-weight: normal;">
-                            ({{ $componentData['category_count'] }} kategori - Skor: {{ number_format($componentData['total_weighted_score'], 3) }})
+                            ({{ $componentData['category_count'] }} kategori - Skor:
+                            {{ number_format($componentData['total_weighted_score'], 3) }})
                         </span>
                     </h4>
-                    
+
                     <table class="no-break" style="width: 100%; border-collapse: collapse; font-size: 10px;">
                         <thead>
                             <tr style="background-color: #e8e8e8;">
@@ -483,11 +497,17 @@
                         <tbody>
                             @foreach ($categories as $category)
                                 <tr>
-                                    <td style="border: 1px solid #ddd; padding: 6px; word-wrap: break-word;">{{ $category['category_name'] }}</td>
-                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">{{ number_format($category['average'], 2) }}</td>
-                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">{{ number_format($category['weight'], 1) }}%</td>
-                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center; color: #1976d2; font-weight: bold;">{{ number_format($category['weighted_score'], 3) }}</td>
-                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">{{ $category['indicator_count'] }}</td>
+                                    <td style="border: 1px solid #ddd; padding: 6px; word-wrap: break-word;">
+                                        {{ $category['category_name'] }}</td>
+                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">
+                                        {{ number_format($category['average'], 2) }}</td>
+                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">
+                                        {{ number_format($category['weight'], 1) }}%</td>
+                                    <td
+                                        style="border: 1px solid #ddd; padding: 6px; text-align: center; color: #1976d2; font-weight: bold;">
+                                        {{ number_format($category['weighted_score'], 3) }}</td>
+                                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">
+                                        {{ $category['indicator_count'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -496,116 +516,125 @@
             @endforeach
 
             {{-- Calculation Formula --}}
-            <div style="background-color: #e3f2fd; padding: 12px; border-radius: 6px; border: 1px solid #bbdefb; margin-top: 15px; page-break-inside: avoid;">
-                <h4 style="color: #1565c0; margin-bottom: 8px; margin-top: 0; font-size: 13px;">ℹ️ Formula Perhitungan:</h4>
-                <ul style="color: #1565c0; font-size: 11px; margin: 0; margin-bottom: 0; padding-left: 20px; line-height: 1.4;">
-                    <li style="margin-bottom: 3px;"><strong>Skor Berbobot per Kategori</strong> = Rata-rata Skor Kategori × (Bobot Kategori ÷ 100)</li>
-                    <li style="margin-bottom: 3px;"><strong>Skor Berbobot per Komponen</strong> = Σ (Skor Berbobot Kategori dalam Komponen)</li>
-                    <li style="margin-bottom: 3px;"><strong>Total Hasil Penilaian</strong> = Σ (Semua Skor Berbobot Komponen)</li>
-                    <li style="margin-bottom: 0;"><strong>Kontribusi</strong> = (Skor Berbobot Kategori ÷ Total Skor Berbobot) × 100%</li>
+            <div
+                style="background-color: #e3f2fd; padding: 12px; border-radius: 6px; border: 1px solid #bbdefb; margin-top: 15px; page-break-inside: avoid;">
+                <h4 style="color: #1565c0; margin-bottom: 8px; margin-top: 0; font-size: 13px;">ℹ️ Formula Perhitungan:
+                </h4>
+                <ul
+                    style="color: #1565c0; font-size: 11px; margin: 0; margin-bottom: 0; padding-left: 20px; line-height: 1.4;">
+                    <li style="margin-bottom: 3px;"><strong>Skor Berbobot per Kategori</strong> = Rata-rata Skor
+                        Kategori × (Bobot Kategori ÷ 100)</li>
+                    <li style="margin-bottom: 3px;"><strong>Skor Berbobot per Komponen</strong> = Σ (Skor Berbobot
+                        Kategori dalam Komponen)</li>
+                    <li style="margin-bottom: 3px;"><strong>Total Hasil Penilaian</strong> = Σ (Semua Skor Berbobot
+                        Komponen)</li>
+                    <li style="margin-bottom: 0;"><strong>Kontribusi</strong> = (Skor Berbobot Kategori ÷ Total Skor
+                        Berbobot) × 100%</li>
                 </ul>
             </div>
         </div>
 
         {{-- Page Break Before Detail Categories --}}
         <div style="page-break-before: always;"></div>
-        
+
         <div style="margin-top: 20px;">
-            <h3 style="color: #333; margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">📋 Detail Skor Per Kategori</h3>
+            <h3
+                style="color: #333; margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+                📋 Detail Skor Per Kategori</h3>
 
-        @foreach ($assessmentScores as $categoryName => $scores)
-            <div class="category" style="page-break-inside: avoid;">
-                <h3 class="category-header">{{ $categoryName }}</h3>
-                <div class="category-info">
-                    {{ $scores->count() }} indikator penilaian
-                </div>
+            @foreach ($assessmentScores as $categoryName => $scores)
+                <div class="category" style="page-break-inside: avoid;">
+                    <h3 class="category-header">{{ $categoryName }}</h3>
+                    <div class="category-info">
+                        {{ $scores->count() }} indikator penilaian
+                    </div>
 
-                <table style="page-break-inside: avoid;">
-                    <thead>
-                        <tr>
-                            <th>Indikator</th>
-                            <th class="score-cell">Skor</th>
-                            <th class="grade-cell">Nilai</th>
-                            <th>Catatan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($scores as $score)
+                    <table style="page-break-inside: avoid;">
+                        <thead>
                             <tr>
-                                <td>
-                                    <strong>{{ $score->assessmentIndicator->nama_indikator }}</strong>
-                                    @if ($score->assessmentIndicator->deskripsi)
-                                        <br><small
-                                            style="color: #666;">{{ $score->assessmentIndicator->deskripsi }}</small>
-                                    @endif
-                                </td>
-                                <td class="score-cell">
-                                    <span
-                                        class="badge
+                                <th>Indikator</th>
+                                <th class="score-cell">Skor</th>
+                                <th class="grade-cell">Nilai</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($scores as $score)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $score->assessmentIndicator->nama_indikator }}</strong>
+                                        @if ($score->assessmentIndicator->deskripsi)
+                                            <br><small
+                                                style="color: #666;">{{ $score->assessmentIndicator->deskripsi }}</small>
+                                        @endif
+                                    </td>
+                                    <td class="score-cell">
+                                        <span
+                                            class="badge
                                         @if ($score->skor >= 3.5) badge-excellent
                                         @elseif($score->skor >= 2.5) badge-good
                                         @elseif($score->skor >= 1.5) badge-fair
                                         @else badge-poor @endif">
-                                        {{ number_format($score->skor, 2) }}
-                                    </span>
-                                </td>
-                                <td class="grade-cell">
-                                    @php
-                                        $gradeDisplay = match ($score->grade) {
-                                            'Sangat Baik', 'A' => 'Sangat Baik',
-                                            'Baik', 'B' => 'Baik',
-                                            'Cukup', 'C' => 'Cukup',
-                                            'Kurang', 'D' => 'Kurang',
-                                            default => $score->grade,
-                                        };
-                                    @endphp
-                                    <span
-                                        class="badge
+                                            {{ number_format($score->skor, 2) }}
+                                        </span>
+                                    </td>
+                                    <td class="grade-cell">
+                                        @php
+                                            $gradeDisplay = match ($score->grade) {
+                                                'Sangat Baik', 'A' => 'Sangat Baik',
+                                                'Baik', 'B' => 'Baik',
+                                                'Cukup', 'C' => 'Cukup',
+                                                'Kurang', 'D' => 'Kurang',
+                                                default => $score->grade,
+                                            };
+                                        @endphp
+                                        <span
+                                            class="badge
                                         @if (in_array($score->grade, ['Sangat Baik', 'A'])) badge-excellent
                                         @elseif(in_array($score->grade, ['Baik', 'B'])) badge-good
                                         @elseif(in_array($score->grade, ['Cukup', 'C'])) badge-fair
                                         @else badge-poor @endif">
-                                        {{ $gradeDisplay }}
-                                    </span>
-                                </td>
-                                <td>{{ $score->catatan ?: '-' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                            {{ $gradeDisplay }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $score->catatan ?: '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
 
-                <div class="category-summary" style="page-break-inside: avoid;">
-                    <div class="category-summary-content">
-                        <div class="category-summary-left">
-                            Total Skor Kategori:
-                        </div>
-                        <div class="category-summary-right">
-                            @php
-                                $categoryTotal = $scores->sum('skor');
-                                $categoryAverage = $scores->avg('skor');
-                                $categoryGrade = match (true) {
-                                    $categoryAverage >= 3.5 => 'Sangat Baik',
-                                    $categoryAverage >= 2.5 => 'Baik',
-                                    $categoryAverage >= 1.5 => 'Cukup',
-                                    default => 'Kurang',
-                                };
-                            @endphp
-                            <strong>{{ number_format($categoryTotal, 2) }}</strong>
-                            (Rata-rata: <strong>{{ number_format($categoryAverage, 2) }}</strong>)
-                            <span
-                                class="badge
+                    <div class="category-summary" style="page-break-inside: avoid;">
+                        <div class="category-summary-content">
+                            <div class="category-summary-left">
+                                Total Skor Kategori:
+                            </div>
+                            <div class="category-summary-right">
+                                @php
+                                    $categoryTotal = $scores->sum('skor');
+                                    $categoryAverage = $scores->avg('skor');
+                                    $categoryGrade = match (true) {
+                                        $categoryAverage >= 3.5 => 'Sangat Baik',
+                                        $categoryAverage >= 2.5 => 'Baik',
+                                        $categoryAverage >= 1.5 => 'Cukup',
+                                        default => 'Kurang',
+                                    };
+                                @endphp
+                                <strong>{{ number_format($categoryTotal, 2) }}</strong>
+                                (Rata-rata: <strong>{{ number_format($categoryAverage, 2) }}</strong>)
+                                <span
+                                    class="badge
                                 @if ($categoryGrade === 'Sangat Baik') badge-excellent
                                 @elseif($categoryGrade === 'Baik') badge-good
                                 @elseif($categoryGrade === 'Cukup') badge-fair
                                 @else badge-poor @endif"
-                                style="margin-left: 10px;">
-                                {{ $categoryGrade }}
-                            </span>
+                                    style="margin-left: 10px;">
+                                    {{ $categoryGrade }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        @endforeach
+            @endforeach
         </div>
     @else
         <div style="text-align: center; padding: 50px; color: #666;">

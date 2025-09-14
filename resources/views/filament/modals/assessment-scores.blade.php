@@ -1,6 +1,27 @@
 <div class="space-y-6">
     {{-- Header Information --}}
     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+        <div class="flex justify-between items-start mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Assessment</h2>
+            <div class="flex space-x-2">
+                <a href="{{ route('assessment.export-pdf', $schoolAssessment->id) }}" 
+                   target="_blank"
+                   class="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export PDF
+                </a>
+                <a href="{{ route('assessment.export-excel', $schoolAssessment->id) }}"
+                   class="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z"></path>
+                    </svg>
+                    Export Excel
+                </a>
+            </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Sekolah</h3>
@@ -105,72 +126,76 @@
                 // Group categories by component
                 $componentGroups = [];
                 $componentTotals = [];
-                
+
                 foreach ($assessmentScores as $categoryName => $scores) {
                     if ($scores->isNotEmpty()) {
                         $firstScore = $scores->first();
-                        $categoryComponent = $firstScore && 
-                                           $firstScore->assessmentIndicator && 
-                                           $firstScore->assessmentIndicator->category
-                            ? $firstScore->assessmentIndicator->category->komponen
-                            : 'Unknown';
-                        
-                        $categoryWeight = $firstScore && 
-                                        $firstScore->assessmentIndicator && 
-                                        $firstScore->assessmentIndicator->category
-                            ? $firstScore->assessmentIndicator->category->bobot_penilaian
-                            : 0;
-                        
+                        $categoryComponent =
+                            $firstScore &&
+                            $firstScore->assessmentIndicator &&
+                            $firstScore->assessmentIndicator->category
+                                ? $firstScore->assessmentIndicator->category->komponen
+                                : 'Unknown';
+
+                        $categoryWeight =
+                            $firstScore &&
+                            $firstScore->assessmentIndicator &&
+                            $firstScore->assessmentIndicator->category
+                                ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                                : 0;
+
                         $categoryAverage = $scores->avg('skor');
                         $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
-                        
+
                         // Map components to display names
-                        $componentDisplayName = match($categoryComponent) {
+                        $componentDisplayName = match ($categoryComponent) {
                             'MANAGEMENT KEPALA SEKOLAH' => 'Kepemimpinan Kepala Sekolah',
-                            'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)' => 'Pelanggan (Siswa, Orang Tua, dan Masyarakat)',
-                            'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN' => 'Pengukuran, Analisis, dan Manajemen Pengetahuan',
-                            'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)' => 'Tenaga Kerja (Tenaga Pendidik dan Kependidikan)',
+                            'PELANGGAN (SISWA, ORANG TUA DAN MASYARAKAT)'
+                                => 'Pelanggan (Siswa, Orang Tua, dan Masyarakat)',
+                            'PENGUKURAN, ANALISIS DAN MANAGAMEN PENGETAHUAN'
+                                => 'Pengukuran, Analisis, dan Manajemen Pengetahuan',
+                            'TENAGA KERJA (TENAGA PENDIDIK DAN KEPENDIDIKAN)'
+                                => 'Tenaga Kerja (Tenaga Pendidik dan Kependidikan)',
                             'PROSES' => 'Proses (Operasional)',
                             'SISWA' => 'Siswa',
                             'GURU' => 'Guru',
-                            'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN' => 'Kinerja Guru dalam Mengelola Proses Pembelajaran',
+                            'KINERJA GURU DALAM MENGELOLA PROSES PEMBELAJARAN'
+                                => 'Kinerja Guru dalam Mengelola Proses Pembelajaran',
                             'HASIL PRODUK DAN/ATAU LAYANAN' => 'Hasil Produk dan/atau Layanan',
-                            default => $categoryComponent
+                            default => $categoryComponent,
                         };
-                        
+
                         if (!isset($componentGroups[$componentDisplayName])) {
                             $componentGroups[$componentDisplayName] = [];
                             $componentTotals[$componentDisplayName] = [
                                 'total_weight' => 0,
                                 'total_weighted_score' => 0,
                                 'category_count' => 0,
-                                'total_avg_score' => 0
+                                'total_avg_score' => 0,
                             ];
                         }
-                        
+
                         $componentGroups[$componentDisplayName][] = [
                             'category_name' => $categoryName,
                             'average' => $categoryAverage,
                             'weight' => $categoryWeight,
                             'weighted_score' => $weightedCategoryScore,
-                            'indicator_count' => $scores->count()
+                            'indicator_count' => $scores->count(),
                         ];
-                        
+
                         $componentTotals[$componentDisplayName]['total_weight'] += $categoryWeight;
                         $componentTotals[$componentDisplayName]['total_weighted_score'] += $weightedCategoryScore;
                         $componentTotals[$componentDisplayName]['category_count']++;
                         $componentTotals[$componentDisplayName]['total_avg_score'] += $categoryAverage;
                     }
                 }
-                
+
                 // Calculate component averages
                 foreach ($componentTotals as $component => $totals) {
-                    $componentTotals[$component]['avg_score'] = $totals['category_count'] > 0 
-                        ? $totals['total_avg_score'] / $totals['category_count'] 
-                        : 0;
-                    $componentTotals[$component]['contribution'] = $totalWeightedScore > 0 
-                        ? ($totals['total_weighted_score'] / $totalWeightedScore) * 100 
-                        : 0;
+                    $componentTotals[$component]['avg_score'] =
+                        $totals['category_count'] > 0 ? $totals['total_avg_score'] / $totals['category_count'] : 0;
+                    $componentTotals[$component]['contribution'] =
+                        $totalWeightedScore > 0 ? ($totals['total_weighted_score'] / $totalWeightedScore) * 100 : 0;
                 }
             @endphp
 
@@ -178,17 +203,21 @@
                 @foreach ($componentGroups as $componentName => $categories)
                     @php
                         $componentData = $componentTotals[$componentName];
-                        $componentColor = match($componentName) {
+                        $componentColor = match ($componentName) {
                             'Kepemimpinan Kepala Sekolah' => 'bg-purple-50 border-purple-200 text-purple-800',
-                            'Pelanggan (Siswa, Orang Tua, dan Masyarakat)' => 'bg-green-50 border-green-200 text-green-800',
-                            'Pengukuran, Analisis, dan Manajemen Pengetahuan' => 'bg-yellow-50 border-yellow-200 text-yellow-800',
-                            'Tenaga Kerja (Tenaga Pendidik dan Kependidikan)' => 'bg-blue-50 border-blue-200 text-blue-800',
+                            'Pelanggan (Siswa, Orang Tua, dan Masyarakat)'
+                                => 'bg-green-50 border-green-200 text-green-800',
+                            'Pengukuran, Analisis, dan Manajemen Pengetahuan'
+                                => 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                            'Tenaga Kerja (Tenaga Pendidik dan Kependidikan)'
+                                => 'bg-blue-50 border-blue-200 text-blue-800',
                             'Proses (Operasional)' => 'bg-indigo-50 border-indigo-200 text-indigo-800',
-                            default => 'bg-gray-50 border-gray-200 text-gray-800'
+                            default => 'bg-gray-50 border-gray-200 text-gray-800',
                         };
                     @endphp
-                    
-                    <div class="border rounded-lg overflow-hidden {{ $componentColor }} dark:bg-gray-800 dark:border-gray-600">
+
+                    <div
+                        class="border rounded-lg overflow-hidden {{ $componentColor }} dark:bg-gray-800 dark:border-gray-600">
                         {{-- Component Header --}}
                         <div class="px-4 py-3 font-semibold border-b border-current/20">
                             <div class="flex justify-between items-center">
@@ -197,15 +226,16 @@
                                     <p class="text-xs opacity-75">{{ $componentData['category_count'] }} kategori</p>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-lg font-bold">{{ number_format($componentData['total_weighted_score'], 3) }}</div>
+                                    <div class="text-lg font-bold">
+                                        {{ number_format($componentData['total_weighted_score'], 3) }}</div>
                                     <div class="text-xs opacity-75">
-                                        Bobot: {{ number_format($componentData['total_weight'], 1) }}% | 
+                                        Bobot: {{ number_format($componentData['total_weight'], 1) }}% |
                                         Kontribusi: {{ number_format($componentData['contribution'], 1) }}%
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         {{-- Categories in Component --}}
                         <div class="px-4 py-2">
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -215,9 +245,15 @@
                                             {{ $category['category_name'] }}
                                         </div>
                                         <div class="space-y-1 text-gray-600 dark:text-gray-400">
-                                            <div>Rata-rata: <span class="font-semibold">{{ number_format($category['average'], 2) }}</span></div>
-                                            <div>Bobot: <span class="font-semibold">{{ number_format($category['weight'], 1) }}%</span></div>
-                                            <div>Skor Berbobot: <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ number_format($category['weighted_score'], 3) }}</span></div>
+                                            <div>Rata-rata: <span
+                                                    class="font-semibold">{{ number_format($category['average'], 2) }}</span>
+                                            </div>
+                                            <div>Bobot: <span
+                                                    class="font-semibold">{{ number_format($category['weight'], 1) }}%</span>
+                                            </div>
+                                            <div>Skor Berbobot: <span
+                                                    class="font-semibold text-indigo-600 dark:text-indigo-400">{{ number_format($category['weighted_score'], 3) }}</span>
+                                            </div>
                                             <div>{{ $category['indicator_count'] }} indikator</div>
                                         </div>
                                     </div>
@@ -233,19 +269,24 @@
                 <table class="w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
                     <thead class="bg-blue-100 dark:bg-blue-800">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                            <th
+                                class="px-4 py-3 text-left text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
                                 Komponen
                             </th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
                                 Kategori
                             </th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
                                 Bobot Total (%)
                             </th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
                                 Skor Berbobot
                             </th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
                                 Kontribusi (%)
                             </th>
                         </tr>
@@ -272,7 +313,8 @@
                                 <td class="px-4 py-3 text-center">
                                     <div class="flex items-center justify-center space-x-2">
                                         <div class="w-12 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                                            <div class="bg-indigo-500 h-2 rounded-full" style="width: {{ $data['contribution'] }}%"></div>
+                                            <div class="bg-indigo-500 h-2 rounded-full"
+                                                style="width: {{ $data['contribution'] }}%"></div>
                                         </div>
                                         <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
                                             {{ number_format($data['contribution'], 1) }}%
