@@ -294,8 +294,9 @@
                         <div class="summary-value">{{ number_format($totalScore, 2) }}</div>
                     </div>
                     <div class="summary-cell" style="margin: 0 10px;">
-                        <div class="summary-label">Skor Rata-rata</div>
-                        <div class="summary-value">{{ number_format($averageScore, 2) }}</div>
+                        <div class="summary-label">Hasil Penilaian</div>
+                        <div class="summary-value">{{ number_format($totalWeightedScore, 2) }}</div>
+                        <div style="font-size: 10px; color: #666;">Skor Berbobot Total</div>
                     </div>
                     <div class="summary-cell">
                         <div class="summary-label">Nilai Keseluruhan</div>
@@ -309,6 +310,96 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {{-- Weighted Score Breakdown Table for PDF --}}
+        <div style="margin: 20px 0;">
+            <h3 style="color: #333; margin-bottom: 15px; font-size: 16px;">📊 Breakdown Skor Berbobot Per Kategori</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #e3f2fd;">
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">Kategori
+                        </th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">
+                            Rata-rata Skor</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Bobot
+                            (%)</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Skor
+                            Berbobot</th>
+                        <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">
+                            Kontribusi (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($assessmentScores as $categoryName => $scores)
+                        @if ($scores->isNotEmpty())
+                            @php
+                                $firstScore = $scores->first();
+                                $categoryWeight =
+                                    $firstScore &&
+                                    $firstScore->assessmentIndicator &&
+                                    $firstScore->assessmentIndicator->category
+                                        ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                                        : 0;
+
+                                $categoryAverage = $scores->avg('skor');
+                                $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
+                                $contribution =
+                                    $totalWeightedScore > 0 ? ($weightedCategoryScore / $totalWeightedScore) * 100 : 0;
+                            @endphp
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">
+                                    {{ $categoryName }}
+                                    <br><small style="color: #666; font-weight: normal;">{{ $scores->count() }}
+                                        indikator</small>
+                                </td>
+                                <td
+                                    style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">
+                                    {{ number_format($categoryAverage, 2) }}
+                                </td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                                    <span
+                                        style="background-color: #e3f2fd; padding: 3px 8px; border-radius: 12px; font-weight: bold;">
+                                        {{ number_format($categoryWeight, 1) }}%
+                                    </span>
+                                </td>
+                                <td
+                                    style="border: 1px solid #ddd; padding: 8px; text-align: center; color: #1976d2; font-weight: bold; font-size: 14px;">
+                                    {{ number_format($weightedCategoryScore, 3) }}
+                                </td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                                    {{ number_format($contribution, 1) }}%
+                                </td>
+                            </tr>
+                        @endif
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #bbdefb; font-weight: bold;">
+                        <td style="border: 1px solid #ddd; padding: 10px; text-align: left;" colspan="3">
+                            <strong>TOTAL SKOR BERBOBOT</strong>
+                        </td>
+                        <td
+                            style="border: 1px solid #ddd; padding: 10px; text-align: center; color: #1565c0; font-size: 16px;">
+                            <strong>{{ number_format($totalWeightedScore, 3) }}</strong>
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">
+                            <strong>100.0%</strong>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            {{-- Calculation Formula --}}
+            <div
+                style="background-color: #e3f2fd; padding: 12px; border-radius: 6px; border: 1px solid #bbdefb; margin-top: 15px;">
+                <h4 style="color: #1565c0; margin-bottom: 8px; font-size: 13px;">ℹ️ Formula Perhitungan:</h4>
+                <ul style="color: #1565c0; font-size: 11px; margin: 0; padding-left: 20px;">
+                    <li><strong>Skor Berbobot</strong> = Rata-rata Skor Kategori × (Bobot Kategori ÷ 100)</li>
+                    <li><strong>Total Hasil Penilaian</strong> = Σ (Semua Skor Berbobot Kategori)</li>
+                    <li><strong>Kontribusi</strong> = (Skor Berbobot Kategori ÷ Total Skor Berbobot) × 100%</li>
+                </ul>
             </div>
         </div>
 

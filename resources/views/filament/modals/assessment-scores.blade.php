@@ -28,6 +28,25 @@
                 $allScores = $assessmentScores->flatten();
                 $totalScore = $allScores->sum('skor');
                 $averageScore = $allScores->avg('skor');
+
+                // Calculate total weighted score from all categories
+                $totalWeightedScore = 0;
+                foreach ($assessmentScores as $categoryName => $scores) {
+                    if ($scores->isNotEmpty()) {
+                        $firstScore = $scores->first();
+                        $categoryWeight =
+                            $firstScore &&
+                            $firstScore->assessmentIndicator &&
+                            $firstScore->assessmentIndicator->category
+                                ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                                : 0;
+
+                        $categoryAverage = $scores->avg('skor');
+                        $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
+                        $totalWeightedScore += $weightedCategoryScore;
+                    }
+                }
+
                 $overallGrade = match (true) {
                     $averageScore >= 3.5 => 'Sangat Baik',
                     $averageScore >= 2.5 => 'Baik',
@@ -53,9 +72,12 @@
                             {{ number_format($totalScore, 2) }}</p>
                     </div>
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-                        <p class="text-sm font-medium text-primary-700 dark:text-primary-300">Skor Rata-rata</p>
+                        <p class="text-sm font-medium text-primary-700 dark:text-primary-300">Hasil Penilaian</p>
                         <p class="text-3xl font-bold text-primary-900 dark:text-primary-100 mt-1">
-                            {{ number_format($averageScore, 2) }}</p>
+                            {{ number_format($totalWeightedScore, 2) }}</p>
+                        <p class="text-xs text-primary-600 dark:text-primary-400 mt-1">
+                            Skor Berbobot Total
+                        </p>
                     </div>
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
                         <p class="text-sm font-medium text-primary-700 dark:text-primary-300">Nilai Keseluruhan</p>
@@ -67,27 +89,146 @@
             </div>
         </div>
 
-        {{-- Quick Actions --}}
-        {{-- <div class="flex flex-wrap gap-3 justify-center">
-            <button onclick="shareReport('{{ $schoolAssessment->school->nama_sekolah }}')"
-                class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z">
-                    </path>
-                </svg>
-                Share Report
-            </button>
-            <button onclick="printReport()"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                    </path>
-                </svg>
-                Print
-            </button>
-        </div> --}}
+        {{-- Weighted Score Breakdown by Category --}}
+        <div
+            class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="bg-blue-100 dark:bg-blue-800 p-2 rounded-lg">
+                    <x-heroicon-s-calculator class="w-5 h-5 text-blue-600 dark:text-blue-300" />
+                </div>
+                <h3 class="text-lg font-bold text-blue-900 dark:text-blue-100">
+                    📊 Breakdown Skor Berbobot Per Kategori
+                </h3>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-blue-100 dark:bg-blue-800">
+                        <tr>
+                            <th
+                                class="px-4 py-3 text-left text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                                Kategori
+                            </th>
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                                Rata-rata Skor
+                            </th>
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                                Bobot (%)
+                            </th>
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                                Skor Berbobot
+                            </th>
+                            <th
+                                class="px-4 py-3 text-center text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                                Kontribusi (%)
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-blue-200 dark:divide-blue-600">
+                        @php
+                            $categoryWeightedScores = [];
+                        @endphp
+                        @foreach ($assessmentScores as $categoryName => $scores)
+                            @php
+                                if ($scores->isNotEmpty()) {
+                                    $firstScore = $scores->first();
+                                    $categoryWeight =
+                                        $firstScore &&
+                                        $firstScore->assessmentIndicator &&
+                                        $firstScore->assessmentIndicator->category
+                                            ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                                            : 0;
+
+                                    $categoryAverage = $scores->avg('skor');
+                                    $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
+                                    $contribution =
+                                        $totalWeightedScore > 0
+                                            ? ($weightedCategoryScore / $totalWeightedScore) * 100
+                                            : 0;
+
+                                    $categoryWeightedScores[] = [
+                                        'name' => $categoryName,
+                                        'average' => $categoryAverage,
+                                        'weight' => $categoryWeight,
+                                        'weighted_score' => $weightedCategoryScore,
+                                        'contribution' => $contribution,
+                                    ];
+                                }
+                            @endphp
+                            <tr class="hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors duration-150">
+                                <td class="px-4 py-3">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {{ $categoryName }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ $scores->count() }} indikator
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ number_format($categoryAverage, 2) }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                        {{ number_format($categoryWeight, 1) }}%
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                        {{ number_format($weightedCategoryScore, 3) }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <div class="w-12 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                            <div class="bg-indigo-500 h-2 rounded-full"
+                                                style="width: {{ $contribution }}%"></div>
+                                        </div>
+                                        <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                            {{ number_format($contribution, 1) }}%
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-blue-200 dark:bg-blue-800">
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-bold text-blue-900 dark:text-blue-100" colspan="3">
+                                TOTAL SKOR BERBOBOT
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="text-xl font-bold text-indigo-700 dark:text-indigo-300">
+                                    {{ number_format($totalWeightedScore, 3) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="text-sm font-bold text-blue-900 dark:text-blue-100">
+                                    100.0%
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            {{-- Calculation Formula --}}
+            <div class="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                <div class="flex items-start space-x-2">
+                    <x-heroicon-s-information-circle class="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div class="text-xs text-blue-700 dark:text-blue-300">
+                        <p class="font-medium mb-1">Formula Perhitungan:</p>
+                        <p><strong>Skor Berbobot</strong> = Rata-rata Skor Kategori × (Bobot Kategori ÷ 100)</p>
+                        <p><strong>Total Hasil Penilaian</strong> = Σ (Semua Skor Berbobot Kategori)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- Assessment Scores by Category --}}
         <div class="space-y-6">

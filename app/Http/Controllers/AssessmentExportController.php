@@ -23,6 +23,24 @@ class AssessmentExportController extends Controller
             $allScores = $assessmentScores->flatten();
             $totalScore = $allScores->sum('skor');
             $averageScore = $allScores->avg('skor');
+
+            // Calculate total weighted score from all categories
+            $totalWeightedScore = 0;
+            foreach ($assessmentScores as $categoryName => $scores) {
+                if ($scores->isNotEmpty()) {
+                    $firstScore = $scores->first();
+                    $categoryWeight = $firstScore &&
+                                    $firstScore->assessmentIndicator &&
+                                    $firstScore->assessmentIndicator->category
+                        ? $firstScore->assessmentIndicator->category->bobot_penilaian
+                        : 0;
+
+                    $categoryAverage = $scores->avg('skor');
+                    $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
+                    $totalWeightedScore += $weightedCategoryScore;
+                }
+            }
+
             $overallGrade = match (true) {
                 $averageScore >= 3.5 => 'Sangat Baik',
                 $averageScore >= 2.5 => 'Baik',
@@ -35,6 +53,7 @@ class AssessmentExportController extends Controller
                 'assessmentScores' => $assessmentScores,
                 'totalScore' => $totalScore,
                 'averageScore' => $averageScore,
+                'totalWeightedScore' => $totalWeightedScore,
                 'overallGrade' => $overallGrade,
                 'generatedAt' => now()->format('d M Y H:i:s')
             ];
