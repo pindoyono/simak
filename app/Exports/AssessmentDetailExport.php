@@ -28,7 +28,7 @@ class AssessmentDetailExport implements WithMultipleSheets
     public function __construct($schoolAssessmentId)
     {
         $this->schoolAssessment = SchoolAssessment::with(['school', 'period', 'assessor'])->findOrFail($schoolAssessmentId);
-        
+
         $this->assessmentScores = AssessmentScore::where('school_assessment_id', $schoolAssessmentId)
             ->with(['assessmentIndicator.category'])
             ->get()
@@ -84,7 +84,7 @@ class AssessmentSummarySheet implements FromArray, WithTitle, WithHeadings, With
     {
         $allScores = $this->assessmentScores->flatten();
         $averageScore = $allScores->avg('skor');
-        
+
         $overallGrade = match (true) {
             $averageScore >= 3.5 => 'Sangat Baik',
             $averageScore >= 2.5 => 'Baik',
@@ -176,25 +176,25 @@ class ComponentBreakdownSheet implements FromArray, WithTitle, WithHeadings, Wit
         // Group categories by component
         $componentGroups = [];
         $componentTotals = [];
-        
+
         foreach ($this->assessmentScores as $categoryName => $scores) {
             if ($scores->isNotEmpty()) {
                 $firstScore = $scores->first();
-                $categoryComponent = $firstScore && 
-                                   $firstScore->assessmentIndicator && 
+                $categoryComponent = $firstScore &&
+                                   $firstScore->assessmentIndicator &&
                                    $firstScore->assessmentIndicator->category
                     ? $firstScore->assessmentIndicator->category->komponen
                     : 'Unknown';
-                
-                $categoryWeight = $firstScore && 
-                                $firstScore->assessmentIndicator && 
+
+                $categoryWeight = $firstScore &&
+                                $firstScore->assessmentIndicator &&
                                 $firstScore->assessmentIndicator->category
                     ? $firstScore->assessmentIndicator->category->bobot_penilaian
                     : 0;
-                
+
                 $categoryAverage = $scores->avg('skor');
                 $weightedCategoryScore = $categoryAverage * ($categoryWeight / 100);
-                
+
                 // Map components to display names
                 $componentDisplayName = match($categoryComponent) {
                     'MANAGEMENT KEPALA SEKOLAH' => 'Kepemimpinan Kepala Sekolah',
@@ -208,7 +208,7 @@ class ComponentBreakdownSheet implements FromArray, WithTitle, WithHeadings, Wit
                     'HASIL PRODUK DAN/ATAU LAYANAN' => 'Hasil Produk dan/atau Layanan',
                     default => $categoryComponent
                 };
-                
+
                 if (!isset($componentGroups[$componentDisplayName])) {
                     $componentGroups[$componentDisplayName] = [];
                     $componentTotals[$componentDisplayName] = [
@@ -218,7 +218,7 @@ class ComponentBreakdownSheet implements FromArray, WithTitle, WithHeadings, Wit
                         'total_avg_score' => 0
                     ];
                 }
-                
+
                 $componentGroups[$componentDisplayName][] = [
                     'category_name' => $categoryName,
                     'average' => $categoryAverage,
@@ -226,21 +226,21 @@ class ComponentBreakdownSheet implements FromArray, WithTitle, WithHeadings, Wit
                     'weighted_score' => $weightedCategoryScore,
                     'indicator_count' => $scores->count()
                 ];
-                
+
                 $componentTotals[$componentDisplayName]['total_weight'] += $categoryWeight;
                 $componentTotals[$componentDisplayName]['total_weighted_score'] += $weightedCategoryScore;
                 $componentTotals[$componentDisplayName]['category_count']++;
                 $componentTotals[$componentDisplayName]['total_avg_score'] += $categoryAverage;
             }
         }
-        
+
         // Calculate component averages and contributions
         foreach ($componentTotals as $component => $totals) {
-            $componentTotals[$component]['avg_score'] = $totals['category_count'] > 0 
-                ? $totals['total_avg_score'] / $totals['category_count'] 
+            $componentTotals[$component]['avg_score'] = $totals['category_count'] > 0
+                ? $totals['total_avg_score'] / $totals['category_count']
                 : 0;
-            $componentTotals[$component]['contribution'] = $this->totalWeightedScore > 0 
-                ? ($totals['total_weighted_score'] / $this->totalWeightedScore) * 100 
+            $componentTotals[$component]['contribution'] = $this->totalWeightedScore > 0
+                ? ($totals['total_weighted_score'] / $this->totalWeightedScore) * 100
                 : 0;
         }
 
@@ -268,7 +268,7 @@ class ComponentBreakdownSheet implements FromArray, WithTitle, WithHeadings, Wit
         foreach ($componentGroups as $componentName => $categories) {
             $data[] = [$componentName];
             $data[] = ['Kategori', 'Rata-rata Skor', 'Bobot (%)', 'Skor Berbobot', 'Jumlah Indikator'];
-            
+
             foreach ($categories as $category) {
                 $data[] = [
                     $category['category_name'],
@@ -351,7 +351,7 @@ class DetailedScoresSheet implements FromArray, WithTitle, WithHeadings, WithSty
 
         foreach ($this->assessmentScores as $categoryName => $scores) {
             $data[] = [$categoryName, '', '', '', ''];
-            
+
             foreach ($scores as $score) {
                 $gradeDisplay = match ($score->grade) {
                     'Sangat Baik', 'A' => 'Sangat Baik',
@@ -369,7 +369,7 @@ class DetailedScoresSheet implements FromArray, WithTitle, WithHeadings, WithSty
                     $score->catatan ?: '-'
                 ];
             }
-            
+
             // Category summary
             $categoryAverage = $scores->avg('skor');
             $categoryGrade = match (true) {
@@ -378,7 +378,7 @@ class DetailedScoresSheet implements FromArray, WithTitle, WithHeadings, WithSty
                 $categoryAverage >= 1.5 => 'Cukup',
                 default => 'Kurang',
             };
-            
+
             $data[] = [
                 'Rata-rata Kategori:',
                 '',

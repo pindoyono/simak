@@ -84,7 +84,7 @@ class AssessmentExportController extends Controller
     {
         try {
             $schoolAssessment = SchoolAssessment::with(['school', 'period', 'assessor'])->findOrFail($schoolAssessmentId);
-            
+
             $filename = 'SIMAK-PM_Assessment_Report_' . str_replace(' ', '_', $schoolAssessment->school->nama_sekolah) . '_' . date('Y-m-d') . '.xlsx';
 
             return Excel::download(new AssessmentDetailExport($schoolAssessmentId), $filename);
